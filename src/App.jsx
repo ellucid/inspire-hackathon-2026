@@ -3,8 +3,8 @@ import { Camera, Plus, Trash2, ChevronRight, Star, Award, TrendingDown, Clock, A
 import Tesseract from 'tesseract.js';
 import axios from 'axios';
 
-const FreshKeepApp = () => {
-  console.log('FreshKeepApp component rendering...');
+const CopiaApp = () => {
+  console.log('COPIA App component rendering...');
   console.log('React version:', React.version);
   
   const [activeTab, setActiveTab] = useState('kitchen');
@@ -31,6 +31,9 @@ const FreshKeepApp = () => {
   const [showSignIn, setShowSignIn] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [userName, setUserName] = useState('Guest');
+  const [userPassword, setUserPassword] = useState('');
+  const [showMealsInfo, setShowMealsInfo] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Manual add food form state
   const [manualFoodName, setManualFoodName] = useState('');
@@ -91,109 +94,90 @@ const FreshKeepApp = () => {
     }
   ]);
 
-  // Load data from localStorage on mount
-  useEffect(() => {
+  // Function to load user-specific data
+  const loadUserData = (username) => {
     try {
-      const savedFoodItems = localStorage.getItem('freshkeep_foodItems');
-      const savedLeftovers = localStorage.getItem('freshkeep_leftovers');
-      const savedUserPoints = localStorage.getItem('freshkeep_userPoints');
-      const savedBadges = localStorage.getItem('freshkeep_badges');
-      const savedWastePreventedKg = localStorage.getItem('freshkeep_wastePreventedKg');
-      const savedRecipesCookedCount = localStorage.getItem('freshkeep_recipesCookedCount');
-      const savedUserName = localStorage.getItem('freshkeep_userName');
-      const savedUserEmail = localStorage.getItem('freshkeep_userEmail');
+      const userKey = `freshkeep_user_${username}`;
+      const userData = localStorage.getItem(userKey);
       
-      if (savedFoodItems) {
-        const items = JSON.parse(savedFoodItems);
-        // Convert date strings back to Date objects
-        const parsedItems = items.map(item => ({
+      if (userData) {
+        const parsed = JSON.parse(userData);
+        
+        setFoodItems((parsed.foodItems || []).map(item => ({
           ...item,
           purchaseDate: new Date(item.purchaseDate),
           expiryDate: new Date(item.expiryDate)
-        }));
-        setFoodItems(parsedItems);
-      }
-      
-      if (savedLeftovers) {
-        const items = JSON.parse(savedLeftovers);
-        const parsedItems = items.map(item => ({
+        })));
+        setUserPoints(parsed.userPoints || 0);
+        setWastePreventedKg(parsed.wastePreventedKg || 0);
+        setRecipesCookedCount(parsed.recipesCookedCount || 0);
+        setLeftovers((parsed.leftovers || []).map(item => ({
           ...item,
           date: new Date(item.date),
           expiryDate: new Date(item.expiryDate)
-        }));
-        setLeftovers(parsedItems);
+        })));
+        setBadges(parsed.badges || []);
+        setUserEmail(parsed.userEmail || '');
       }
-      
-      if (savedUserPoints) setUserPoints(parseInt(savedUserPoints));
-      if (savedBadges) setBadges(JSON.parse(savedBadges));
-      if (savedWastePreventedKg) setWastePreventedKg(parseFloat(savedWastePreventedKg));
-      if (savedRecipesCookedCount) setRecipesCookedCount(parseInt(savedRecipesCookedCount));
-      if (savedUserName) setUserName(savedUserName);
-      if (savedUserEmail) setUserEmail(savedUserEmail);
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    }
+  };
+
+  // Function to save user-specific data
+  const saveUserData = (username) => {
+    if (username && username !== 'Guest') {
+      const userKey = `freshkeep_user_${username}`;
+      const userData = {
+        foodItems,
+        userPoints,
+        wastePreventedKg,
+        recipesCookedCount,
+        leftovers,
+        badges,
+        userEmail
+      };
+      localStorage.setItem(userKey, JSON.stringify(userData));
+    }
+  };
+
+  // Load data from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedUserName = localStorage.getItem('freshkeep_currentUser');
+      const savedUserPassword = localStorage.getItem('freshkeep_currentPassword');
+      const savedIsLoggedIn = localStorage.getItem('freshkeep_isLoggedIn');
+
+      if (savedIsLoggedIn === 'true' && savedUserName && savedUserPassword) {
+        setUserName(savedUserName);
+        setUserPassword(savedUserPassword);
+        setIsLoggedIn(true);
+        
+        // Load user-specific data
+        loadUserData(savedUserName);
+      }
     } catch (error) {
       console.error('Error loading from localStorage:', error);
-      // Clear corrupted data
-      localStorage.removeItem('freshkeep_foodItems');
-      localStorage.removeItem('freshkeep_leftovers');
-      localStorage.removeItem('freshkeep_userPoints');
-      localStorage.removeItem('freshkeep_badges');
-      localStorage.removeItem('freshkeep_wastePreventedKg');
-      localStorage.removeItem('freshkeep_recipesCookedCount');
     } finally {
       setHasLoadedFromStorage(true);
     }
   }, []);
 
-  // Save foodItems to localStorage whenever they change (but not on initial load)
+  // Save user data whenever any relevant state changes
   useEffect(() => {
-    if (hasLoadedFromStorage) {
-      localStorage.setItem('freshkeep_foodItems', JSON.stringify(foodItems));
+    if (hasLoadedFromStorage && userName && userName !== 'Guest' && isLoggedIn) {
+      saveUserData(userName);
     }
-  }, [foodItems, hasLoadedFromStorage]);
+  }, [foodItems, leftovers, userPoints, badges, wastePreventedKg, recipesCookedCount, userEmail, hasLoadedFromStorage, userName, isLoggedIn]);
 
-  // Save leftovers to localStorage whenever they change
+  // Save current user session info
   useEffect(() => {
     if (hasLoadedFromStorage) {
-      localStorage.setItem('freshkeep_leftovers', JSON.stringify(leftovers));
+      localStorage.setItem('freshkeep_currentUser', userName);
+      localStorage.setItem('freshkeep_currentPassword', userPassword);
+      localStorage.setItem('freshkeep_isLoggedIn', isLoggedIn.toString());
     }
-  }, [leftovers, hasLoadedFromStorage]);
-
-  // Save user stats to localStorage
-  useEffect(() => {
-    if (hasLoadedFromStorage) {
-      localStorage.setItem('freshkeep_userPoints', userPoints.toString());
-    }
-  }, [userPoints, hasLoadedFromStorage]);
-
-  useEffect(() => {
-    if (hasLoadedFromStorage) {
-      localStorage.setItem('freshkeep_badges', JSON.stringify(badges));
-    }
-  }, [badges, hasLoadedFromStorage]);
-
-  useEffect(() => {
-    if (hasLoadedFromStorage) {
-      localStorage.setItem('freshkeep_wastePreventedKg', wastePreventedKg.toString());
-    }
-  }, [wastePreventedKg, hasLoadedFromStorage]);
-
-  useEffect(() => {
-    if (hasLoadedFromStorage) {
-      localStorage.setItem('freshkeep_recipesCookedCount', recipesCookedCount.toString());
-    }
-  }, [recipesCookedCount, hasLoadedFromStorage]);
-
-  useEffect(() => {
-    if (hasLoadedFromStorage) {
-      localStorage.setItem('freshkeep_userName', userName);
-    }
-  }, [userName, hasLoadedFromStorage]);
-
-  useEffect(() => {
-    if (hasLoadedFromStorage) {
-      localStorage.setItem('freshkeep_userEmail', userEmail);
-    }
-  }, [userEmail, hasLoadedFromStorage]);
+  }, [userName, userPassword, isLoggedIn, hasLoadedFromStorage]);
 
   // Track recipe count and notify when new AI recipes become available
   const [previousRecipeCount, setPreviousRecipeCount] = useState(0);
@@ -1615,20 +1599,20 @@ const FreshKeepApp = () => {
       )}
 
       {/* Header */}
-      <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 shadow-2xl">
-        <div className="max-w-7xl mx-auto px-6 py-10">
-          <div className="flex items-center justify-between mb-6">
+      <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 shadow-2xl" >
+        <div className="max-w-7xl mx-auto px-8 py-12">
+          <div className="flex items-center justify-between mb-10">
             <div>
-              <h1 className="text-5xl font-bold text-white mb-2 drop-shadow-lg" style={{ fontFamily: 'Georgia, serif' }}>
-                🥗 FreshKeep
+              <h1 className="text-6xl font-bold text-white mb-3 drop-shadow-lg" style={{ fontFamily: 'Georgia, serif' }}>
+                🥗 COPIA
               </h1>
-              <p className="text-green-50 text-lg">Your AI-Powered Food Waste Reducer</p>
+              <p className="text-green-50 text-xl">Your AI-Powered Food Waste Reducer</p>
             </div>
             <div className="text-right">
-              <p className="text-white font-semibold text-lg mb-2">👤 {userName}</p>
+              <p className="text-white font-semibold text-xl mb-3">👤 {userName}</p>
               <button
                 onClick={() => setShowSignIn(true)}
-                className="bg-white/20 hover:bg-white/30 text-white px-6 py-2 rounded-xl font-semibold transition-all border-2 border-white/30"
+                className="bg-white/20 hover:bg-white/30 text-white px-8 py-3 rounded-xl font-semibold transition-all border-2 border-white/30 text-lg"
               >
                 {userName === 'Guest' ? 'Sign In' : 'Account'}
               </button>
@@ -1636,52 +1620,59 @@ const FreshKeepApp = () => {
           </div>
 
           {/* Stats Bar */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-            <div className="bg-white/95 backdrop-blur rounded-2xl p-6 text-center shadow-xl hover:shadow-2xl transition-all hover:scale-105 border border-green-200">
-              <div className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="bg-white/95 backdrop-blur rounded-2xl p-8 text-center shadow-xl hover:shadow-2xl transition-all hover:scale-105 border border-green-200">
+              <div className="text-5xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-3">
                 ⭐ {userPoints}
               </div>
-              <div className="text-sm text-gray-600 mt-2 font-medium">Rescue Points</div>
+              <div className="text-base text-gray-600 font-medium">Rescue Points</div>
+              <p className="text-xs text-gray-500 mt-2">Earn points by saving food!</p>
             </div>
-            <div className="bg-white/95 backdrop-blur rounded-2xl p-6 text-center shadow-xl hover:shadow-2xl transition-all hover:scale-105 border border-green-200">
-              <div className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+            <div className="bg-white/95 backdrop-blur rounded-2xl p-8 text-center shadow-xl hover:shadow-2xl transition-all hover:scale-105 border border-green-200">
+              <div className="text-5xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-3">
                 🍽️ {recipesCookedCount}
               </div>
-              <div className="text-sm text-gray-600 mt-2 font-medium">Meals Rescued</div>
+              <div className="text-base text-gray-600 font-medium">Meals Rescued</div>
+              <p className="text-xs text-gray-500 mt-2">Recipes cooked with expiring ingredients</p>
             </div>
-            <div className="bg-white/95 backdrop-blur rounded-2xl p-6 text-center shadow-xl hover:shadow-2xl transition-all hover:scale-105 border border-green-200">
-              <div className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+            <div className="bg-white/95 backdrop-blur rounded-2xl p-8 text-center shadow-xl hover:shadow-2xl transition-all hover:scale-105 border border-green-200">
+              <div className="text-5xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-3">
                 ♻️ {wastePreventedKg.toFixed(1)}kg
               </div>
-              <div className="text-sm text-gray-600 mt-2 font-medium">Waste Prevented</div>
+              <div className="text-base text-gray-600 font-medium">Waste Prevented</div>
+              <p className="text-xs text-gray-500 mt-2">Food saved from landfills</p>
             </div>
-            <div className="bg-white/95 backdrop-blur rounded-2xl p-6 text-center shadow-xl hover:shadow-2xl transition-all hover:scale-105 border border-green-200">
-              <div className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+            <div 
+              onClick={() => setActiveTab('challenges')}
+              className="bg-white/95 backdrop-blur rounded-2xl p-8 text-center shadow-xl hover:shadow-2xl transition-all hover:scale-105 border border-green-200 cursor-pointer"
+            >
+              <div className="text-5xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-3">
                 🏆 {badges.length}
               </div>
-              <div className="text-sm text-gray-600 mt-2 font-medium">Badges Earned</div>
+              <div className="text-base text-gray-600 font-medium">Badges Earned</div>
+              <p className="text-xs text-blue-600 mt-2 font-semibold">Click to view badges →</p>
             </div>
           </div>
 
           {/* Alert for expiring foods */}
           {expiringItems.length > 0 && (
-            <div className="mt-8 bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-400 rounded-2xl p-6 shadow-lg">
-              <h3 className="text-red-800 font-bold text-2xl mb-3 flex items-center gap-2">
+            <div className="mt-10 bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-400 rounded-2xl p-8 shadow-lg">
+              <h3 className="text-red-800 font-bold text-2xl mb-4 flex items-center gap-3">
                 🚨 {expiringItems.length} item(s) expiring soon!
               </h3>
-              <p className="text-red-700 text-lg">
+              <p className="text-red-700 text-xl">
                 Ready to rescue: {expiringItems.map(f => f.emoji + ' ' + f.name).join(', ')}
               </p>
             </div>
           )}
 
           {/* Tabs */}
-          <div className="flex gap-4 mt-8 overflow-x-auto pb-2">
+          <div className="flex gap-5 mt-10 overflow-x-auto pb-2">
             {['kitchen', 'recipes', 'leftovers', 'challenges'].map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-8 py-4 rounded-xl font-bold capitalize whitespace-nowrap transition-all transform ${
+                className={`px-10 py-5 rounded-xl font-bold capitalize whitespace-nowrap transition-all transform text-lg ${
                   activeTab === tab
                     ? 'bg-white text-green-700 shadow-2xl scale-105 border-2 border-green-300'
                     : 'bg-white/30 text-white hover:bg-white/40 border-2 border-white/50 hover:scale-105'
@@ -2000,9 +1991,9 @@ const FreshKeepApp = () => {
                 return (
                   <div
                     key={item.id}
-                    className={`bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all border-l-8 ${
-                      status.status === 'soon' || status.status === 'today' ? 'border-red-500' :
-                      status.status === 'moderate' ? 'border-yellow-500' : 'border-green-500'
+                    className={`bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all border-l-8 border-2 ${
+                      status.status === 'soon' || status.status === 'today' ? 'border-red-500 border-r-red-200 border-t-red-200 border-b-red-200' :
+                      status.status === 'moderate' ? 'border-yellow-500 border-r-yellow-200 border-t-yellow-200 border-b-yellow-200' : 'border-green-500 border-r-green-200 border-t-green-200 border-b-green-200'
                     } ${isEditing ? 'ring-4 ring-blue-400' : ''}`}
                   >
                     <div className="flex items-start gap-6">
@@ -2506,6 +2497,38 @@ const FreshKeepApp = () => {
         </div>
       )}
 
+      {/* Meals Rescued Info Modal */}
+      {showMealsInfo && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowMealsInfo(false)}>
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="text-center mb-6">
+              <div className="text-6xl mb-4">🍽️</div>
+              <h3 className="text-3xl font-bold text-gray-800 mb-2">Meals Rescued</h3>
+            </div>
+            <div className="bg-green-50 border-2 border-green-300 rounded-xl p-4 mb-6">
+              <p className="text-gray-700 text-lg leading-relaxed mb-4">
+                <strong>What does this mean?</strong>
+              </p>
+              <p className="text-gray-700 text-base leading-relaxed mb-3">
+                🍽️ <strong>Meals Rescued</strong> counts the number of recipes you've cooked using ingredients that were about to expire.
+              </p>
+              <p className="text-gray-700 text-base leading-relaxed mb-3">
+                Every time you mark a recipe as "Cooked" in the Recipes tab, you're saving food from going to waste and turning it into a delicious meal!
+              </p>
+              <p className="text-gray-700 text-base leading-relaxed">
+                <strong>You've rescued {recipesCookedCount} meal{recipesCookedCount !== 1 ? 's' : ''} so far!</strong> 🎉
+              </p>
+            </div>
+            <button
+              onClick={() => setShowMealsInfo(false)}
+              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 px-6 rounded-xl font-bold text-lg hover:shadow-lg transition-all"
+            >
+              Got it!
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Sign In Modal */}
       {showSignIn && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowSignIn(false)}>
@@ -2520,18 +2543,21 @@ const FreshKeepApp = () => {
             {userName === 'Guest' ? (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-gray-700 font-semibold mb-2">Name</label>
+                  <label className="block text-gray-700 font-semibold mb-2">Username</label>
                   <input
                     type="text"
-                    placeholder="Enter your name"
+                    placeholder="Enter your username"
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-green-600 focus:outline-none"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && e.target.value.trim()) {
-                        const name = e.target.value.trim();
-                        setUserName(name);
-                        setShowSignIn(false);
-                      }
-                    }}
+                    id="username-input"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-2">Password</label>
+                  <input
+                    type="password"
+                    placeholder="Create a password"
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-green-600 focus:outline-none"
+                    id="password-input"
                   />
                 </div>
                 <div>
@@ -2540,26 +2566,34 @@ const FreshKeepApp = () => {
                     type="email"
                     placeholder="your@email.com"
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-green-600 focus:outline-none"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        setUserEmail(e.target.value.trim());
-                      }
-                    }}
+                    id="email-input"
                   />
                 </div>
                 <button
-                  onClick={(e) => {
-                    const nameInput = e.target.parentElement.querySelector('input[type="text"]');
-                    const emailInput = e.target.parentElement.querySelector('input[type="email"]');
-                    if (nameInput.value.trim()) {
-                      setUserName(nameInput.value.trim());
+                  onClick={() => {
+                    const usernameInput = document.getElementById('username-input');
+                    const passwordInput = document.getElementById('password-input');
+                    const emailInput = document.getElementById('email-input');
+                    
+                    if (usernameInput.value.trim() && passwordInput.value.trim()) {
+                      const username = usernameInput.value.trim();
+                      
+                      setUserName(username);
+                      setUserPassword(passwordInput.value.trim());
                       setUserEmail(emailInput.value.trim());
+                      setIsLoggedIn(true);
+                      
+                      // Load user's saved data (if they're logging back in)
+                      loadUserData(username);
+                      
                       setShowSignIn(false);
+                    } else {
+                      alert('Please enter both username and password');
                     }
                   }}
                   className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 px-6 rounded-xl font-bold text-lg hover:shadow-lg transition-all"
                 >
-                  Sign In
+                  Create Account
                 </button>
               </div>
             ) : (
@@ -2576,8 +2610,24 @@ const FreshKeepApp = () => {
                 </div>
                 <button
                   onClick={() => {
-                    setUserName('Guest');
+                    // Save current user's data before signing out
+                    if (userName !== 'Guest') {
+                      saveUserData(userName);
+                    }
+                    
+                    // Reset all stats and inventory to default
+                    setFoodItems([]);
+                    setLeftovers([]);
+                    setUserPoints(0);
+                    setBadges([]);
+                    setWastePreventedKg(0);
+                    setRecipesCookedCount(0);
                     setUserEmail('');
+                    
+                    // Sign out
+                    setUserName('Guest');
+                    setUserPassword('');
+                    setIsLoggedIn(false);
                     setShowSignIn(false);
                   }}
                   className="w-full bg-red-500 text-white py-3 px-6 rounded-xl font-bold text-lg hover:bg-red-600 transition-all"
@@ -2599,4 +2649,4 @@ const FreshKeepApp = () => {
   );
 };
 
-export default FreshKeepApp;
+export default CopiaApp;
