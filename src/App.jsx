@@ -19,7 +19,6 @@ const FreshKeepApp = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
   const [scannedItems, setScannedItems] = useState([]);
-  const [editingScannedItem, setEditingScannedItem] = useState(null);
   const [ocrText, setOcrText] = useState('');
   const [editingItem, setEditingItem] = useState(null);
   const [cuisineFilter, setCuisineFilter] = useState('All');
@@ -182,11 +181,12 @@ const FreshKeepApp = () => {
     'Strawberries': { days: 3, fridge: 7, freezer: 365, category: 'Fruits', emoji: '🍓' },
     'Bananas': { days: 5, fridge: 7, freezer: 60, category: 'Fruits', emoji: '🍌' },
     'Apples': { days: 7, fridge: 30, freezer: 365, category: 'Fruits', emoji: '🍎' },
+    'Peaches': { days: 3, fridge: 5, freezer: 365, category: 'Fruits', emoji: '🍑' },
     'Oranges': { days: 7, fridge: 21, freezer: 180, category: 'Fruits', emoji: '🍊' },
     'Grapes': { days: 3, fridge: 7, freezer: 365, category: 'Fruits', emoji: '🍇' },
     'Blueberries': { days: 3, fridge: 10, freezer: 365, category: 'Fruits', emoji: '🫐' },
+    'Raspberries': { days: 3, fridge: 5, freezer: 365, category: 'Fruits', emoji: '🍒' },
     'Blackberries': { days: 3, fridge: 7, freezer: 365, category: 'Fruits', emoji: '🫐' },
-    'Raspberries': { days: 3, fridge: 5, freezer: 365, category: 'Fruits', emoji: '🫐' },
     'Avocado': { days: 3, fridge: 7, freezer: 180, category: 'Fruits', emoji: '🥑' },
     'Watermelon': { days: 3, fridge: 7, freezer: 365, category: 'Fruits', emoji: '🍉' },
     
@@ -203,12 +203,14 @@ const FreshKeepApp = () => {
     'Butter': { days: 30, fridge: 90, freezer: 365, category: 'Dairy', emoji: '🧈' },
     
     'Spinach': { days: 3, fridge: 7, freezer: 180, category: 'Vegetables', emoji: '🥬' },
+    'Collard Greens': { days: 3, fridge: 7, freezer: 365, category: 'Vegetables', emoji: '🥬' },
     'Tomatoes': { days: 5, fridge: 10, freezer: 60, category: 'Vegetables', emoji: '🍅' },
     'Carrots': { days: 14, fridge: 30, freezer: 365, category: 'Vegetables', emoji: '🥕' },
     'Broccoli': { days: 3, fridge: 7, freezer: 365, category: 'Vegetables', emoji: '🥦' },
     'Lettuce': { days: 3, fridge: 7, freezer: 30, category: 'Vegetables', emoji: '🥬' },
     'Peppers': { days: 5, fridge: 10, freezer: 365, category: 'Vegetables', emoji: '🫑' },
     'Onions': { days: 30, fridge: 60, freezer: 180, category: 'Vegetables', emoji: '🧅' },
+    'Garlic': { days: 90, fridge: 180, freezer: 365, category: 'Vegetables', emoji: '🧄' },
     'Potatoes': { days: 30, fridge: 60, freezer: 365, category: 'Vegetables', emoji: '🥔' },
     'Cucumber': { days: 5, fridge: 7, freezer: 60, category: 'Vegetables', emoji: '🥒' },
     'Mushrooms': { days: 5, fridge: 7, freezer: 365, category: 'Vegetables', emoji: '🍄' },
@@ -217,61 +219,9 @@ const FreshKeepApp = () => {
     'Rice': { days: 365, fridge: 365, freezer: 730, category: 'Grains', emoji: '🍚' },
     'Pasta': { days: 365, fridge: 365, freezer: 730, category: 'Grains', emoji: '🍝' },
     'Cereal': { days: 180, fridge: 180, freezer: 365, category: 'Grains', emoji: '🥣' },
-    'Oatmeal': { days: 365, fridge: 365, freezer: 730, category: 'Grains', emoji: '🥣' },
-    'Quinoa': { days: 365, fridge: 365, freezer: 730, category: 'Grains', emoji: '🍚' },
-    'Bagels': { days: 5, fridge: 7, freezer: 180, category: 'Grains', emoji: '🥯' },
-    'Tortillas': { days: 7, fridge: 14, freezer: 180, category: 'Grains', emoji: '🌮' },
+    'Tortillas': { days: 7, fridge: 14, freezer: 90, category: 'Grains', emoji: '🌯' },
     
-    'Orange Juice': { days: 7, fridge: 14, freezer: 365, category: 'Beverages', emoji: '🧃' },
-    'Apple Juice': { days: 7, fridge: 14, freezer: 365, category: 'Beverages', emoji: '🧃' },
-    'Soda': { days: 180, fridge: 180, freezer: 365, category: 'Beverages', emoji: '🥤' },
-    'Water': { days: 365, fridge: 365, freezer: 365, category: 'Beverages', emoji: '💧' },
-    'Coffee': { days: 180, fridge: 180, freezer: 365, category: 'Beverages', emoji: '☕' },
-    
-    // More fruits
-    'Mango': { days: 3, fridge: 7, freezer: 365, category: 'Fruits', emoji: '🥭' },
-    'Pineapple': { days: 3, fridge: 7, freezer: 365, category: 'Fruits', emoji: '🍍' },
-    'Peaches': { days: 3, fridge: 7, freezer: 365, category: 'Fruits', emoji: '🍑' },
-    'Pears': { days: 5, fridge: 14, freezer: 365, category: 'Fruits', emoji: '🍐' },
-    'Cherries': { days: 2, fridge: 7, freezer: 365, category: 'Fruits', emoji: '🍒' },
-    'Kiwi': { days: 5, fridge: 14, freezer: 365, category: 'Fruits', emoji: '🥝' },
-    'Lemons': { days: 14, fridge: 30, freezer: 180, category: 'Fruits', emoji: '🍋' },
-    'Limes': { days: 14, fridge: 30, freezer: 180, category: 'Fruits', emoji: '🍋' },
-    
-    // More meat
-    'Chicken Thighs': { days: 2, fridge: 2, freezer: 270, category: 'Meat', emoji: '🍗' },
-    'Steak': { days: 2, fridge: 3, freezer: 180, category: 'Meat', emoji: '🥩' },
-    'Shrimp': { days: 1, fridge: 2, freezer: 180, category: 'Meat', emoji: '🦐' },
-    'Tuna': { days: 1, fridge: 2, freezer: 90, category: 'Meat', emoji: '🐟' },
-    'Ground Turkey': { days: 2, fridge: 2, freezer: 120, category: 'Meat', emoji: '🦃' },
-    'Sausage': { days: 7, fridge: 14, freezer: 180, category: 'Meat', emoji: '🌭' },
-    'Ham': { days: 7, fridge: 14, freezer: 180, category: 'Meat', emoji: '🍖' },
-    
-    // More dairy
-    'Greek Yogurt': { days: 14, fridge: 21, freezer: 60, category: 'Dairy', emoji: '🥄' },
-    'Cheddar Cheese': { days: 14, fridge: 30, freezer: 180, category: 'Dairy', emoji: '🧀' },
-    'Mozzarella': { days: 14, fridge: 21, freezer: 180, category: 'Dairy', emoji: '🧀' },
-    'Cream Cheese': { days: 14, fridge: 21, freezer: 180, category: 'Dairy', emoji: '🧀' },
-    'Sour Cream': { days: 14, fridge: 21, freezer: 60, category: 'Dairy', emoji: '🥛' },
-    
-    // More vegetables
-    'Cauliflower': { days: 5, fridge: 7, freezer: 365, category: 'Vegetables', emoji: '🥦' },
-    'Bell Peppers': { days: 5, fridge: 10, freezer: 365, category: 'Vegetables', emoji: '🫑' },
-    'Garlic': { days: 90, fridge: 180, freezer: 365, category: 'Vegetables', emoji: '🧄' },
-    'Sweet Potatoes': { days: 14, fridge: 30, freezer: 365, category: 'Vegetables', emoji: '🍠' },
-    'Zucchini': { days: 5, fridge: 7, freezer: 180, category: 'Vegetables', emoji: '🥒' },
-    'Asparagus': { days: 3, fridge: 5, freezer: 180, category: 'Vegetables', emoji: '🌱' },
-    'Green Beans': { days: 3, fridge: 7, freezer: 365, category: 'Vegetables', emoji: '🫘' },
-    'Corn': { days: 2, fridge: 5, freezer: 365, category: 'Vegetables', emoji: '🌽' },
-    'Celery': { days: 7, fridge: 14, freezer: 180, category: 'Vegetables', emoji: '🥬' },
-    'Kale': { days: 5, fridge: 7, freezer: 180, category: 'Vegetables', emoji: '🥬' },
-    
-    // Other
-    'Black Beans': { days: 365, fridge: 365, freezer: 730, category: 'Other', emoji: '🫘' },
-    'Peanut Butter': { days: 180, fridge: 180, freezer: 365, category: 'Other', emoji: '🥜' },
-    'Honey': { days: 730, fridge: 730, freezer: 730, category: 'Other', emoji: '🍯' },
-    'Olive Oil': { days: 365, fridge: 365, freezer: 365, category: 'Other', emoji: '🫒' },
-    'Mayo': { days: 60, fridge: 60, freezer: 180, category: 'Other', emoji: '🥫' },
+    'Peanut Butter': { days: 180, fridge: 365, freezer: 730, category: 'Other', emoji: '🥜' },
     
     'Orange Juice': { days: 7, fridge: 14, freezer: 365, category: 'Beverages', emoji: '🧃' },
     'Soda': { days: 180, fridge: 180, freezer: 365, category: 'Beverages', emoji: '🥤' },
@@ -1021,10 +971,10 @@ const FreshKeepApp = () => {
     ? allRecipes 
     : allRecipes.filter(recipe => recipe.cuisine === cuisineFilter);
 
-  // Notify when new AI recipes become available
+  // Notify when new AI recipes become available (DISABLED - removed popup)
   useEffect(() => {
     const aiRecipeCount = allRecipes.filter(r => r.isAiGenerated).length;
-    // Removed notification to avoid popup on startup
+    // Removed notification popup
     setPreviousRecipeCount(aiRecipeCount);
   }, [foodItems.length]);
 
@@ -1169,10 +1119,24 @@ const FreshKeepApp = () => {
         },
       });
 
-      // Set Tesseract parameters for better receipt recognition
+      // Enhanced Tesseract parameters for better receipt recognition
       await worker.setParameters({
-        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789$.,/-% ',
+        // Expanded character whitelist including more special characters
+        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789$.,/-% &\'()@#:;!*',
         preserve_interword_spaces: '1',
+        // Use SPARSE_TEXT mode for receipts (better for varied layouts)
+        tessedit_pageseg_mode: '11',
+        // Enable text order correction
+        textord_heavy_nr: '1',
+        // Improve character recognition
+        tessedit_char_blacklist: '',
+        // Enable dictionary and context-based correction
+        load_system_dawg: '1',
+        load_freq_dawg: '1',
+        // Better line detection
+        textord_min_linesize: '2.0',
+        // Character confidence
+        tessedit_reject_alphas_in_number_mode: '0',
       });
 
       console.log('🔍 Processing receipt image with enhanced OCR...');
@@ -1187,37 +1151,111 @@ const FreshKeepApp = () => {
       // Store the raw OCR text
       setOcrText(text);
       
-      // Parse the text to find food items
-      const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 2);
-      console.log('📝 Processing', lines.length, 'lines...');
+      // Parse the text to find food items - improved parsing
+      // Clean up common OCR errors
+      const cleanedText = text
+        .replace(/[|]/g, 'I')  // Replace pipes with I
+        .replace(/[0O]/g, (match) => match === '0' ? '0' : 'O')  // Context-aware O/0
+        .replace(/\s+/g, ' ');  // Normalize whitespace
+      
+      // Split by newlines, but also try to split by common receipt patterns
+      let lines = cleanedText.split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 2);
+      
+      // If we got very few lines, try splitting on price patterns ($ followed by numbers)
+      if (lines.length < 5) {
+        console.log('⚠️ Few newlines detected, splitting on price patterns...');
+        // Split before each price pattern ($X.XX)
+        const pricePattern = /(\$\d+\.\d{2})/g;
+        const segments = cleanedText.split(pricePattern);
+        lines = [];
+        
+        for (let i = 0; i < segments.length - 1; i += 2) {
+          // Combine text segment with its price
+          const line = (segments[i] + (segments[i + 1] || '')).trim();
+          if (line.length > 2) {
+            lines.push(line);
+          }
+        }
+        
+        // Also try splitting on common uppercase food words
+        if (lines.length < 5) {
+          console.log('⚠️ Trying word-by-word scanning...');
+          // Split into words and check each word/phrase
+          const words = cleanedText.split(/\s+/);
+          lines = [];
+          
+          // Create overlapping phrases (1-5 words)
+          for (let i = 0; i < words.length; i++) {
+            for (let len = 1; len <= 5 && i + len <= words.length; len++) {
+              const phrase = words.slice(i, i + len).join(' ');
+              if (phrase.length > 2) {
+                lines.push(phrase);
+              }
+            }
+          }
+        }
+      }
+      
+      console.log('📝 Processing', lines.length, 'lines/phrases...');
+      console.log('📄 Full OCR text:', text);
       
       setScanProgress(75);
       
       const extractedItems = [];
       
+      // Try both original and cleaned lines for better matching
       for (const line of lines) {
-        // Try to match with our food database
-        const matchedFood = matchFoodItem(line);
+        console.log('🔍 Checking line:', line);
         
-        if (matchedFood) {
-          // Check if we already have this item
-          const existingItem = extractedItems.find(item => item.name === matchedFood.name);
+        // Try to match with our food database - check for ALL possible matches in the line
+        const words = line.toLowerCase().split(/\s+/);
+        
+        // Create overlapping phrases from the line to catch all food items
+        const phrasesToCheck = [];
+        
+        // Add the full line
+        phrasesToCheck.push(line);
+        
+        // Add single words (important for catching individual food names)
+        words.forEach(word => {
+          if (word.length > 3) {  // Skip very short words
+            phrasesToCheck.push(word);
+          }
+        });
+        
+        // Add 2-5 word phrases
+        for (let i = 0; i < words.length; i++) {
+          for (let len = 2; len <= 5 && i + len <= words.length; len++) {
+            const phrase = words.slice(i, i + len).join(' ');
+            phrasesToCheck.push(phrase);
+          }
+        }
+        
+        // Check each phrase for food matches
+        for (const phrase of phrasesToCheck) {
+          const matchedFood = matchFoodItem(phrase);
           
-          if (!existingItem) {
-            // Try to extract quantity from the line
-            const quantityMatch = line.match(/(\d+\.?\d*)\s*(lb|lbs|pound|pounds|kg|g|oz|unit|units|ct|count|ea|each|x)?/i);
-            let quantity = '1 unit';
+          if (matchedFood) {
+            // Check if we already have this item
+            const existingItem = extractedItems.find(item => item.name === matchedFood.name);
             
-            if (quantityMatch) {
-              const num = parseFloat(quantityMatch[1]);
-              const unit = quantityMatch[2] || 'unit';
-              quantity = `${num} ${unit}`;
-            }
-            
-            // Try to extract price
-            const priceMatch = line.match(/\$?\s*(\d+\.\d{2})/);
-            const price = priceMatch ? `$${priceMatch[1]}` : '$0.00';
-            
+            if (!existingItem) {
+              // Try to extract quantity from the original line
+              const quantityMatch = line.match(/(\d+\.?\d*)\s*(lb|lbs|pound|pounds|kg|g|oz|unit|units|ct|count|ea|each|x)?/i);
+              let quantity = '1 unit';
+              
+              if (quantityMatch) {
+                const num = parseFloat(quantityMatch[1]);
+                const unit = quantityMatch[2] || 'unit';
+                quantity = `${num} ${unit}`;
+              }
+              
+              // Try to extract price
+              const priceMatch = line.match(/\$?\s*(\d+\.\d{2})/);
+              const price = priceMatch ? `$${priceMatch[1]}` : '$0.00';
+              
             extractedItems.push({
               name: matchedFood.name,
               quantity: quantity,
@@ -1230,6 +1268,7 @@ const FreshKeepApp = () => {
             console.log(`✅ Found: ${matchedFood.name} (${matchedFood.category})`);
           }
         }
+      }
         
         setScanProgress(75 + (lines.indexOf(line) / lines.length) * 20);
       }
@@ -1262,61 +1301,119 @@ const FreshKeepApp = () => {
   
   // Match food item against database with fuzzy matching
   const matchFoodItem = (description) => {
-    const descLower = description.toLowerCase();
+    const descLower = description.toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')  // Remove special chars
+      .replace(/\s+/g, ' ')           // Normalize spaces
+      .trim();
     
     // Define comprehensive food keyword mappings with confidence scores
+    // Order matters: More specific items should come first
     const foodKeywordMap = {
-      'Bananas': { keywords: ['banana', 'bananas', 'bnana', 'bnna'], category: 'Fruits' },
-      'Apples': { keywords: ['apple', 'apples', 'aple', 'gala', 'fuji', 'granny', 'honeycrisp'], category: 'Fruits' },
-      'Oranges': { keywords: ['orange', 'oranges', 'orng', 'navel'], category: 'Fruits' },
-      'Grapes': { keywords: ['grape', 'grapes', 'grp'], category: 'Fruits' },
-      'Strawberries': { keywords: ['strawberry', 'strawberries', 'strwbry', 'strwberry', 'straw', 'strawbry'], category: 'Fruits' },
-      'Blueberries': { keywords: ['blueberry', 'blueberries', 'blubry', 'blue berry', 'bluebry'], category: 'Fruits' },
-      'Blackberries': { keywords: ['blackberry', 'blackberries', 'blkberry', 'black berry', 'blackbry', 'blckberry'], category: 'Fruits' },
-      'Raspberries': { keywords: ['raspberry', 'raspberries', 'rasp', 'raspbry', 'rasberry', 'rasberries'], category: 'Fruits' },
-      'Avocado': { keywords: ['avocado', 'avocados', 'avcd'], category: 'Fruits' },
-      'Watermelon': { keywords: ['watermelon', 'watermelons', 'wtrmelon'], category: 'Fruits' },
-      'Milk': { keywords: ['milk', 'mlk', 'whole milk', '2% milk', 'skim milk', 'dairy'], category: 'Dairy' },
-      'Eggs': { keywords: ['egg', 'eggs', 'large eggs', 'dozen eggs', 'dz egg'], category: 'Dairy' },
-      'Bread': { keywords: ['bread', 'loaf', 'wheat bread', 'white bread', 'brd'], category: 'Grains' },
-      'Chicken Breast': { keywords: ['chicken breast', 'chicken', 'chkn breast', 'chckn', 'poultry'], category: 'Meat' },
-      'Ground Beef': { keywords: ['ground beef', 'beef', 'grd beef', 'hamburger', 'grnd beef'], category: 'Meat' },
-      'Bacon': { keywords: ['bacon', 'bcn'], category: 'Meat' },
-      'Salmon': { keywords: ['salmon', 'salmn'], category: 'Seafood' },
-      'Pork Chops': { keywords: ['pork chop', 'pork', 'prk chop'], category: 'Meat' },
-      'Cheese': { keywords: ['cheese', 'cheddar', 'chz', 'mozzarella', 'swiss'], category: 'Dairy' },
-      'Yogurt': { keywords: ['yogurt', 'yoghurt', 'ygt', 'yoghrt'], category: 'Dairy' },
-      'Butter': { keywords: ['butter', 'bttr'], category: 'Dairy' },
-      'Lettuce': { keywords: ['lettuce', 'lettce', 'romaine', 'iceberg'], category: 'Vegetables' },
-      'Tomatoes': { keywords: ['tomato', 'tomatoes', 'tmto', 'cherry tomato'], category: 'Vegetables' },
-      'Carrots': { keywords: ['carrot', 'carrots', 'crrt'], category: 'Vegetables' },
-      'Onions': { keywords: ['onion', 'onions'], category: 'Vegetables' },
-      'Potatoes': { keywords: ['potato', 'potatoes', 'ptato', 'russet'], category: 'Vegetables' },
-      'Spinach': { keywords: ['spinach', 'spnch'], category: 'Vegetables' },
-      'Broccoli': { keywords: ['broccoli', 'brocoli', 'brcli'], category: 'Vegetables' },
-      'Peppers': { keywords: ['pepper', 'peppers', 'bell pepper'], category: 'Vegetables' },
-      'Cucumber': { keywords: ['cucumber', 'cucumbers', 'ccmbr'], category: 'Vegetables' },
-      'Mushrooms': { keywords: ['mushroom', 'mushrooms', 'mshrm'], category: 'Vegetables' },
-      'Rice': { keywords: ['rice', 'white rice', 'brown rice'], category: 'Grains' },
-      'Pasta': { keywords: ['pasta', 'spaghetti', 'penne', 'noodles', 'macaroni'], category: 'Grains' },
-      'Cereal': { keywords: ['cereal', 'creal'], category: 'Grains' },
-      'Orange Juice': { keywords: ['orange juice', 'oj', 'orng juice'], category: 'Beverages' },
+      // Fruits - specific items first
+      'Bananas': { keywords: ['banana', 'bananas', 'bnana', 'bnna', 'banan'], category: 'Fruits' },
+      'Strawberries': { keywords: ['strawberry', 'strawberries', 'strwbry', 'strwberry', 'strawbry', 'stberry'], category: 'Fruits' },
+      'Blueberries': { keywords: ['blueberry', 'blueberries', 'blubry', 'bluebry', 'blberry', 'blubery'], category: 'Fruits' },
+      'Blackberries': { keywords: ['blackberry', 'blackberries', 'blkberry', 'blackbry', 'blckberry', 'blkbry'], category: 'Fruits' },
+      'Raspberries': { keywords: ['raspberry', 'raspberries', 'raspbry', 'rasberry', 'rasberries', 'rspbry', 'raspberies', 'raspberrys'], category: 'Fruits' },
+      'Apples': { keywords: ['apple', 'apples', 'aple', 'appl', 'gala', 'fuji', 'granny', 'honeycrisp', 'grny'], category: 'Fruits' },
+      'Peaches': { keywords: ['peach', 'peaches', 'peche', 'pech'], category: 'Fruits' },
+      'Oranges': { keywords: ['orange', 'oranges', 'orng', 'ornge', 'navel'], category: 'Fruits' },
+      'Grapes': { keywords: ['grape', 'grapes', 'grp', 'grpe'], category: 'Fruits' },
+      'Avocado': { keywords: ['avocado', 'avocados', 'avcd', 'avcdo'], category: 'Fruits' },
+      'Watermelon': { keywords: ['watermelon', 'watermelons', 'wtrmelon', 'wmelon'], category: 'Fruits' },
+      
+      // Meat - specific items first
+      'Chicken': { keywords: ['chicken', 'chkn', 'chckn', 'poultry', 'chicken breast', 'chkn breast', 'pot pie', 'chicken pot'], category: 'Meat' },
+      'Ground Beef': { keywords: ['ground beef', 'beef', 'grd beef', 'hamburger', 'grnd beef', 'grnd', 'bef'], category: 'Meat' },
+      'Bacon': { keywords: ['bacon', 'bcn', 'bacn'], category: 'Meat' },
+      'Salmon': { keywords: ['salmon', 'salmn', 'samon'], category: 'Seafood' },
+      'Pork Chops': { keywords: ['pork chop', 'pork', 'prk chop', 'prk'], category: 'Meat' },
+      
+      // Dairy
+      'Milk': { keywords: ['milk', 'mlk', 'whole milk', '2 milk', 'skim milk', 'dairy', 'milf', 'mllk'], category: 'Dairy' },
+      'Eggs': { keywords: ['egg', 'eggs', 'large eggs', 'dozen eggs', 'dz egg', 'egs'], category: 'Dairy' },
+      'Cheese': { keywords: ['cheese', 'cheddar', 'chz', 'mozzarella', 'swiss', 'chees', 'chse'], category: 'Dairy' },
+      'Yogurt': { keywords: ['yogurt', 'yoghurt', 'ygt', 'yoghrt', 'yourt'], category: 'Dairy' },
+      'Butter': { keywords: ['butter', 'bttr', 'buttr'], category: 'Dairy' },
+      
+      // Grains
+      'Tortillas': { keywords: ['tortilla', 'tortillas', 'wraps', 'wrap', 'grain wrap', 'flour tortilla', 'tortila'], category: 'Grains' },
+      'Bread': { keywords: ['bread', 'loaf', 'wheat bread', 'white bread', 'brd', 'bred'], category: 'Grains' },
+      'Rice': { keywords: ['rice', 'white rice', 'brown rice', 'rce'], category: 'Grains' },
+      'Pasta': { keywords: ['pasta', 'spaghetti', 'penne', 'noodles', 'macaroni', 'psta'], category: 'Grains' },
+      'Cereal': { keywords: ['cereal', 'creal', 'cerel'], category: 'Grains' },
+      
+      // Vegetables
+      'Cucumber': { keywords: ['cucumber', 'cucumbers', 'ccmbr', 'cucumbr'], category: 'Vegetables' },
+      'Collard Greens': { keywords: ['collard', 'collards'], category: 'Vegetables' },
+      'Garlic': { keywords: ['garlic', 'garlc'], category: 'Vegetables' },
+      'Lettuce': { keywords: ['lettuce', 'lettce', 'romaine', 'iceberg', 'letuce'], category: 'Vegetables' },
+      'Tomatoes': { keywords: ['tomato', 'tomatoes', 'tmto', 'tomatos', 'tomat'], category: 'Vegetables' },
+      'Carrots': { keywords: ['carrot', 'carrots', 'crrt', 'carot'], category: 'Vegetables' },
+      'Onions': { keywords: ['onion', 'onions', 'onon'], category: 'Vegetables' },
+      'Potatoes': { keywords: ['potato', 'potatoes', 'ptato', 'russet', 'potat'], category: 'Vegetables' },
+      'Spinach': { keywords: ['spinach', 'spnch', 'spinch'], category: 'Vegetables' },
+      'Broccoli': { keywords: ['broccoli', 'brocoli', 'brcli', 'broccli'], category: 'Vegetables' },
+      'Peppers': { keywords: ['pepper', 'peppers', 'pepr'], category: 'Vegetables' },
+      'Mushrooms': { keywords: ['mushroom', 'mushrooms', 'mshrm', 'mushrm'], category: 'Vegetables' },
+      
+      // Other
+      'Peanut Butter': { keywords: ['peanut', 'pnut'], category: 'Other' },
+      
+      // Beverages
+      'Orange Juice': { keywords: ['orange juice', 'oj', 'orng juice', 'ornge juice', 'juice'], category: 'Beverages' },
     };
     
-    // Check for exact or partial matches
+    console.log('🔍 Matching line:', description, '→ cleaned:', descLower);
+    
+    // First pass: Check for exact or partial matches
+    let bestMatch = null;
+    let bestMatchLength = 0;
+    
     for (const [foodName, { keywords, category }] of Object.entries(foodKeywordMap)) {
       for (const keyword of keywords) {
+        // Check if keyword is in description
         if (descLower.includes(keyword)) {
-          return {
-            name: foodName,
-            category: category,
-            confidence: 'high'
-          };
+          // Prefer longer keyword matches (more specific)
+          if (keyword.length > bestMatchLength) {
+            console.log(`  ✅ Matched "${keyword}" → ${foodName}`);
+            bestMatch = { name: foodName, category: category, confidence: 'high' };
+            bestMatchLength = keyword.length;
+          }
+        }
+        
+        // Also try fuzzy matching for very close matches (1-2 char difference)
+        // BUT only for longer keywords (6+ chars) to avoid false positives
+        else if (keyword.length >= 6) {
+          const words = descLower.split(' ');
+          for (const word of words) {
+            // Word must be very close in length (within 1 char)
+            if (word.length >= keyword.length - 1 && word.length <= keyword.length + 1) {
+              // Calculate similarity (simple character overlap)
+              let matches = 0;
+              const minLen = Math.min(word.length, keyword.length);
+              for (let i = 0; i < minLen; i++) {
+                if (word[i] === keyword[i]) matches++;
+              }
+              
+              // Require 80% similarity for fuzzy match (stricter)
+              const similarity = matches / keyword.length;
+              if (similarity >= 0.8 && keyword.length > bestMatchLength) {
+                console.log(`  ✅ Fuzzy matched "${word}" ≈ "${keyword}" (${Math.round(similarity*100)}%) → ${foodName}`);
+                bestMatch = { name: foodName, category: category, confidence: 'high' };
+                bestMatchLength = keyword.length;
+              }
+            }
+          }
         }
       }
     }
     
-    return null;
+    if (!bestMatch) {
+      console.log('  ❌ No match found');
+    }
+    
+    return bestMatch;
   };
 
   const addScannedItemsToInventory = () => {
@@ -1593,7 +1690,7 @@ const FreshKeepApp = () => {
                         <Camera className="w-16 h-16 mx-auto text-green-600 mb-4" />
                         <h4 className="text-xl font-bold text-gray-800 mb-2">📸 Upload Receipt Photo</h4>
                         <p className="text-gray-600 mb-4">
-                          Automatically extract food items from your grocery receipt
+                          Powered by Veryfi AI - Industry-leading receipt parsing and data extraction
                         </p>
                         
                         {isScanning && (
@@ -1640,98 +1737,52 @@ const FreshKeepApp = () => {
                       <div>
                         <h4 className="font-bold text-gray-800 mb-3">✅ AI Scanned Items ({scannedItems.length})</h4>
                         
+                        {/* Show extracted OCR text for debugging */}
+                        {ocrText && (
+                          <div className="mb-4 p-4 bg-gray-100 rounded-xl border border-gray-300">
+                            <details>
+                              <summary className="cursor-pointer font-semibold text-gray-700 hover:text-gray-900">
+                                📄 View Raw OCR Text (Click to expand)
+                              </summary>
+                              <pre className="mt-2 text-xs text-gray-600 whitespace-pre-wrap max-h-40 overflow-y-auto">
+                                {ocrText || "No text extracted"}
+                              </pre>
+                            </details>
+                          </div>
+                        )}
+                        
                         <div className="space-y-3 mb-4 max-h-96 overflow-y-auto">
                           {scannedItems.map(item => (
-                            <div key={item.id} className="bg-green-50 p-3 rounded-xl">
-                              <div className="flex items-start gap-3">
-                                <input
-                                  type="checkbox"
-                                  checked={item.selected}
-                                  onChange={(e) => {
-                                    setScannedItems(scannedItems.map(i => 
-                                      i.id === item.id ? { ...i, selected: e.target.checked } : i
-                                    ));
-                                  }}
-                                  className="w-5 h-5 mt-1"
-                                />
-                                
-                                <div className="flex-1">
-                                  {editingScannedItem === item.id ? (
-                                    // Editing mode
-                                    <div className="space-y-2">
-                                      <input
-                                        type="text"
-                                        value={item.name}
-                                        onChange={(e) => {
-                                          setScannedItems(scannedItems.map(i => 
-                                            i.id === item.id ? { ...i, name: e.target.value } : i
-                                          ));
-                                        }}
-                                        className="w-full px-3 py-2 border-2 border-green-500 rounded-lg font-semibold"
-                                        placeholder="Food name"
-                                      />
-                                      <div className="flex gap-2">
-                                        <input
-                                          type="text"
-                                          value={item.quantity}
-                                          onChange={(e) => {
-                                            setScannedItems(scannedItems.map(i => 
-                                              i.id === item.id ? { ...i, quantity: e.target.value } : i
-                                            ));
-                                          }}
-                                          className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm"
-                                          placeholder="Quantity"
-                                        />
-                                      </div>
-                                      <div className="flex gap-2">
-                                        <button
-                                          onClick={() => setEditingScannedItem(null)}
-                                          className="flex-1 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-green-700"
-                                        >
-                                          ✓ Done
-                                        </button>
-                                        <button
-                                          onClick={() => {
-                                            setScannedItems(scannedItems.filter(i => i.id !== item.id));
-                                            setEditingScannedItem(null);
-                                          }}
-                                          className="px-3 py-2 bg-red-100 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-200"
-                                        >
-                                          🗑️ Delete
-                                        </button>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    // Display mode
-                                    <div>
-                                      <p className="font-semibold text-gray-800">{item.name}</p>
-                                      <p className="text-sm text-gray-600">
-                                        {item.quantity}
-                                      </p>
-                                      <button
-                                        onClick={() => setEditingScannedItem(item.id)}
-                                        className="mt-2 text-xs text-blue-600 hover:text-blue-800 font-semibold"
-                                      >
-                                        ✏️ Edit
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-                                
-                                <select
-                                  value={item.storage}
-                                  onChange={(e) => {
-                                    setScannedItems(scannedItems.map(i => 
-                                      i.id === item.id ? { ...i, storage: e.target.value } : i
-                                    ));
-                                  }}
-                                  className="px-3 py-2 border-2 border-gray-300 rounded-lg text-sm"
-                                >
-                                  <option>Fridge</option>
-                                  <option>Freezer</option>
-                                  <option>Pantry</option>
-                                </select>
+                            <div key={item.id} className="flex items-center gap-3 bg-green-50 p-3 rounded-xl">
+                              <input
+                                type="checkbox"
+                                checked={item.selected}
+                                onChange={(e) => {
+                                  setScannedItems(scannedItems.map(i => 
+                                    i.id === item.id ? { ...i, selected: e.target.checked } : i
+                                  ));
+                                }}
+                                className="w-5 h-5"
+                              />
+                              <div className="flex-1">
+                                <p className="font-semibold text-gray-800">{item.name}</p>
+                                <p className="text-sm text-gray-600">
+                                  {item.quantity}
+                                </p>
                               </div>
+                              <select
+                                value={item.storage}
+                                onChange={(e) => {
+                                  setScannedItems(scannedItems.map(i => 
+                                    i.id === item.id ? { ...i, storage: e.target.value } : i
+                                  ));
+                                }}
+                                className="px-3 py-2 border-2 border-gray-300 rounded-lg text-sm"
+                              >
+                                <option>Fridge</option>
+                                <option>Freezer</option>
+                                <option>Pantry</option>
+                              </select>
                             </div>
                           ))}
                         </div>
