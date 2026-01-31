@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Camera, Plus, Trash2, ChevronRight, Star, Award, TrendingDown, Clock, AlertCircle, Check, Gift, Trophy, Target, Flame, Upload, X, Edit } from 'lucide-react';
+import Tesseract from 'tesseract.js';
+import axios from 'axios';
 
 const FreshKeepApp = () => {
   console.log('FreshKeepApp component rendering...');
@@ -15,7 +17,10 @@ const FreshKeepApp = () => {
   const [addMethod, setAddMethod] = useState('scan'); // 'scan' or 'manual'
   const [notification, setNotification] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState(0);
   const [scannedItems, setScannedItems] = useState([]);
+  const [editingScannedItem, setEditingScannedItem] = useState(null);
+  const [ocrText, setOcrText] = useState('');
   const [editingItem, setEditingItem] = useState(null);
   const [cuisineFilter, setCuisineFilter] = useState('All');
   const [leftoverName, setLeftoverName] = useState('');
@@ -180,10 +185,12 @@ const FreshKeepApp = () => {
     'Oranges': { days: 7, fridge: 21, freezer: 180, category: 'Fruits', emoji: '🍊' },
     'Grapes': { days: 3, fridge: 7, freezer: 365, category: 'Fruits', emoji: '🍇' },
     'Blueberries': { days: 3, fridge: 10, freezer: 365, category: 'Fruits', emoji: '🫐' },
+    'Blackberries': { days: 3, fridge: 7, freezer: 365, category: 'Fruits', emoji: '🫐' },
+    'Raspberries': { days: 3, fridge: 5, freezer: 365, category: 'Fruits', emoji: '🫐' },
     'Avocado': { days: 3, fridge: 7, freezer: 180, category: 'Fruits', emoji: '🥑' },
     'Watermelon': { days: 3, fridge: 7, freezer: 365, category: 'Fruits', emoji: '🍉' },
     
-    'Chicken Breast': { days: 2, fridge: 2, freezer: 270, category: 'Meat', emoji: '🍗' },
+    'Chicken': { days: 2, fridge: 2, freezer: 270, category: 'Meat', emoji: '🍗' },
     'Ground Beef': { days: 2, fridge: 2, freezer: 120, category: 'Meat', emoji: '🥩' },
     'Pork Chops': { days: 2, fridge: 3, freezer: 180, category: 'Meat', emoji: '🥓' },
     'Salmon': { days: 1, fridge: 2, freezer: 90, category: 'Meat', emoji: '🐟' },
@@ -210,6 +217,61 @@ const FreshKeepApp = () => {
     'Rice': { days: 365, fridge: 365, freezer: 730, category: 'Grains', emoji: '🍚' },
     'Pasta': { days: 365, fridge: 365, freezer: 730, category: 'Grains', emoji: '🍝' },
     'Cereal': { days: 180, fridge: 180, freezer: 365, category: 'Grains', emoji: '🥣' },
+    'Oatmeal': { days: 365, fridge: 365, freezer: 730, category: 'Grains', emoji: '🥣' },
+    'Quinoa': { days: 365, fridge: 365, freezer: 730, category: 'Grains', emoji: '🍚' },
+    'Bagels': { days: 5, fridge: 7, freezer: 180, category: 'Grains', emoji: '🥯' },
+    'Tortillas': { days: 7, fridge: 14, freezer: 180, category: 'Grains', emoji: '🌮' },
+    
+    'Orange Juice': { days: 7, fridge: 14, freezer: 365, category: 'Beverages', emoji: '🧃' },
+    'Apple Juice': { days: 7, fridge: 14, freezer: 365, category: 'Beverages', emoji: '🧃' },
+    'Soda': { days: 180, fridge: 180, freezer: 365, category: 'Beverages', emoji: '🥤' },
+    'Water': { days: 365, fridge: 365, freezer: 365, category: 'Beverages', emoji: '💧' },
+    'Coffee': { days: 180, fridge: 180, freezer: 365, category: 'Beverages', emoji: '☕' },
+    
+    // More fruits
+    'Mango': { days: 3, fridge: 7, freezer: 365, category: 'Fruits', emoji: '🥭' },
+    'Pineapple': { days: 3, fridge: 7, freezer: 365, category: 'Fruits', emoji: '🍍' },
+    'Peaches': { days: 3, fridge: 7, freezer: 365, category: 'Fruits', emoji: '🍑' },
+    'Pears': { days: 5, fridge: 14, freezer: 365, category: 'Fruits', emoji: '🍐' },
+    'Cherries': { days: 2, fridge: 7, freezer: 365, category: 'Fruits', emoji: '🍒' },
+    'Kiwi': { days: 5, fridge: 14, freezer: 365, category: 'Fruits', emoji: '🥝' },
+    'Lemons': { days: 14, fridge: 30, freezer: 180, category: 'Fruits', emoji: '🍋' },
+    'Limes': { days: 14, fridge: 30, freezer: 180, category: 'Fruits', emoji: '🍋' },
+    
+    // More meat
+    'Chicken Thighs': { days: 2, fridge: 2, freezer: 270, category: 'Meat', emoji: '🍗' },
+    'Steak': { days: 2, fridge: 3, freezer: 180, category: 'Meat', emoji: '🥩' },
+    'Shrimp': { days: 1, fridge: 2, freezer: 180, category: 'Meat', emoji: '🦐' },
+    'Tuna': { days: 1, fridge: 2, freezer: 90, category: 'Meat', emoji: '🐟' },
+    'Ground Turkey': { days: 2, fridge: 2, freezer: 120, category: 'Meat', emoji: '🦃' },
+    'Sausage': { days: 7, fridge: 14, freezer: 180, category: 'Meat', emoji: '🌭' },
+    'Ham': { days: 7, fridge: 14, freezer: 180, category: 'Meat', emoji: '🍖' },
+    
+    // More dairy
+    'Greek Yogurt': { days: 14, fridge: 21, freezer: 60, category: 'Dairy', emoji: '🥄' },
+    'Cheddar Cheese': { days: 14, fridge: 30, freezer: 180, category: 'Dairy', emoji: '🧀' },
+    'Mozzarella': { days: 14, fridge: 21, freezer: 180, category: 'Dairy', emoji: '🧀' },
+    'Cream Cheese': { days: 14, fridge: 21, freezer: 180, category: 'Dairy', emoji: '🧀' },
+    'Sour Cream': { days: 14, fridge: 21, freezer: 60, category: 'Dairy', emoji: '🥛' },
+    
+    // More vegetables
+    'Cauliflower': { days: 5, fridge: 7, freezer: 365, category: 'Vegetables', emoji: '🥦' },
+    'Bell Peppers': { days: 5, fridge: 10, freezer: 365, category: 'Vegetables', emoji: '🫑' },
+    'Garlic': { days: 90, fridge: 180, freezer: 365, category: 'Vegetables', emoji: '🧄' },
+    'Sweet Potatoes': { days: 14, fridge: 30, freezer: 365, category: 'Vegetables', emoji: '🍠' },
+    'Zucchini': { days: 5, fridge: 7, freezer: 180, category: 'Vegetables', emoji: '🥒' },
+    'Asparagus': { days: 3, fridge: 5, freezer: 180, category: 'Vegetables', emoji: '🌱' },
+    'Green Beans': { days: 3, fridge: 7, freezer: 365, category: 'Vegetables', emoji: '🫘' },
+    'Corn': { days: 2, fridge: 5, freezer: 365, category: 'Vegetables', emoji: '🌽' },
+    'Celery': { days: 7, fridge: 14, freezer: 180, category: 'Vegetables', emoji: '🥬' },
+    'Kale': { days: 5, fridge: 7, freezer: 180, category: 'Vegetables', emoji: '🥬' },
+    
+    // Other
+    'Black Beans': { days: 365, fridge: 365, freezer: 730, category: 'Other', emoji: '🫘' },
+    'Peanut Butter': { days: 180, fridge: 180, freezer: 365, category: 'Other', emoji: '🥜' },
+    'Honey': { days: 730, fridge: 730, freezer: 730, category: 'Other', emoji: '🍯' },
+    'Olive Oil': { days: 365, fridge: 365, freezer: 365, category: 'Other', emoji: '🫒' },
+    'Mayo': { days: 60, fridge: 60, freezer: 180, category: 'Other', emoji: '🥫' },
     
     'Orange Juice': { days: 7, fridge: 14, freezer: 365, category: 'Beverages', emoji: '🧃' },
     'Soda': { days: 180, fridge: 180, freezer: 365, category: 'Beverages', emoji: '🥤' },
@@ -962,10 +1024,7 @@ const FreshKeepApp = () => {
   // Notify when new AI recipes become available
   useEffect(() => {
     const aiRecipeCount = allRecipes.filter(r => r.isAiGenerated).length;
-    if (hasLoadedFromStorage && previousRecipeCount > 0 && aiRecipeCount > previousRecipeCount) {
-      const newRecipes = aiRecipeCount - previousRecipeCount;
-      showNotification(`🎉 ${newRecipes} new AI recipe${newRecipes > 1 ? 's' : ''} available!`);
-    }
+    // Removed notification to avoid popup on startup
     setPreviousRecipeCount(aiRecipeCount);
   }, [foodItems.length]);
 
@@ -1087,32 +1146,177 @@ const FreshKeepApp = () => {
     showNotification(`Condition updated to ${newCondition}`);
   };
 
-  // AI Receipt Scanning simulation
+  // Veryfi Receipt Scanning with backend API
   const simulateReceiptScan = async (file) => {
+    if (!file) {
+      showNotification('⚠️ Please select an image file');
+      return;
+    }
+
     setIsScanning(true);
-    showNotification('AI is scanning your receipt... 🤖');
+    setScanProgress(0);
+    showNotification('📸 Scanning receipt with OCR...');
     
-    // Simulate AI processing time
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      // Use Tesseract.js for free local OCR with improved settings
+      const worker = await Tesseract.createWorker('eng', 1, {
+        logger: (m) => {
+          if (m.status === 'recognizing text') {
+            const progress = Math.round(m.progress * 60);
+            setScanProgress(progress);
+            console.log(`OCR Progress: ${progress}%`);
+          }
+        },
+      });
+
+      // Set Tesseract parameters for better receipt recognition
+      await worker.setParameters({
+        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789$.,/-% ',
+        preserve_interword_spaces: '1',
+      });
+
+      console.log('🔍 Processing receipt image with enhanced OCR...');
+      const { data: { text } } = await worker.recognize(file, {
+        rotateAuto: true,
+      });
+      await worker.terminate();
+      
+      setScanProgress(70);
+      console.log('✅ OCR Complete! Extracted text:', text);
+      
+      // Store the raw OCR text
+      setOcrText(text);
+      
+      // Parse the text to find food items
+      const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 2);
+      console.log('📝 Processing', lines.length, 'lines...');
+      
+      setScanProgress(75);
+      
+      const extractedItems = [];
+      
+      for (const line of lines) {
+        // Try to match with our food database
+        const matchedFood = matchFoodItem(line);
+        
+        if (matchedFood) {
+          // Check if we already have this item
+          const existingItem = extractedItems.find(item => item.name === matchedFood.name);
+          
+          if (!existingItem) {
+            // Try to extract quantity from the line
+            const quantityMatch = line.match(/(\d+\.?\d*)\s*(lb|lbs|pound|pounds|kg|g|oz|unit|units|ct|count|ea|each|x)?/i);
+            let quantity = '1 unit';
+            
+            if (quantityMatch) {
+              const num = parseFloat(quantityMatch[1]);
+              const unit = quantityMatch[2] || 'unit';
+              quantity = `${num} ${unit}`;
+            }
+            
+            // Try to extract price
+            const priceMatch = line.match(/\$?\s*(\d+\.\d{2})/);
+            const price = priceMatch ? `$${priceMatch[1]}` : '$0.00';
+            
+            extractedItems.push({
+              name: matchedFood.name,
+              quantity: quantity,
+              price: price,
+              originalLine: line,
+              confidence: 'high',
+              category: matchedFood.category
+            });
+            
+            console.log(`✅ Found: ${matchedFood.name} (${matchedFood.category})`);
+          }
+        }
+        
+        setScanProgress(75 + (lines.indexOf(line) / lines.length) * 20);
+      }
+      
+      setScanProgress(100);
+      
+      if (extractedItems.length === 0) {
+        setIsScanning(false);
+        showNotification('⚠️ No food items detected in receipt. Try a clearer photo or add items manually.');
+        return;
+      }
+      
+      // Map to our format
+      setScannedItems(extractedItems.map((item, idx) => ({
+        ...item,
+        id: `ocr-${Date.now()}-${idx}`,
+        storage: 'Fridge',
+        selected: true
+      })));
+      
+      setIsScanning(false);
+      showNotification(`✅ Found ${extractedItems.length} food item(s) in receipt!`);
+      
+    } catch (error) {
+      console.error('❌ OCR Error:', error);
+      setIsScanning(false);
+      showNotification(`❌ Failed to scan receipt: ${error.message}. Try a clearer photo.`);
+    }
+  };
+  
+  // Match food item against database with fuzzy matching
+  const matchFoodItem = (description) => {
+    const descLower = description.toLowerCase();
     
-    // Simulated AI-extracted items from receipt
-    const extractedItems = [
-      { name: 'Bananas', quantity: '6 pieces', barcode: '1234567890' },
-      { name: 'Milk', quantity: '1 gallon', barcode: '0987654321' },
-      { name: 'Eggs', quantity: '1 dozen', barcode: '1122334455' },
-      { name: 'Bread', quantity: '1 loaf', barcode: '5544332211' },
-      { name: 'Chicken Breast', quantity: '2 lbs', barcode: '9988776655' }
-    ];
+    // Define comprehensive food keyword mappings with confidence scores
+    const foodKeywordMap = {
+      'Bananas': { keywords: ['banana', 'bananas', 'bnana', 'bnna'], category: 'Fruits' },
+      'Apples': { keywords: ['apple', 'apples', 'aple', 'gala', 'fuji', 'granny', 'honeycrisp'], category: 'Fruits' },
+      'Oranges': { keywords: ['orange', 'oranges', 'orng', 'navel'], category: 'Fruits' },
+      'Grapes': { keywords: ['grape', 'grapes', 'grp'], category: 'Fruits' },
+      'Strawberries': { keywords: ['strawberry', 'strawberries', 'strwbry', 'strwberry', 'straw', 'strawbry'], category: 'Fruits' },
+      'Blueberries': { keywords: ['blueberry', 'blueberries', 'blubry', 'blue berry', 'bluebry'], category: 'Fruits' },
+      'Blackberries': { keywords: ['blackberry', 'blackberries', 'blkberry', 'black berry', 'blackbry', 'blckberry'], category: 'Fruits' },
+      'Raspberries': { keywords: ['raspberry', 'raspberries', 'rasp', 'raspbry', 'rasberry', 'rasberries'], category: 'Fruits' },
+      'Avocado': { keywords: ['avocado', 'avocados', 'avcd'], category: 'Fruits' },
+      'Watermelon': { keywords: ['watermelon', 'watermelons', 'wtrmelon'], category: 'Fruits' },
+      'Milk': { keywords: ['milk', 'mlk', 'whole milk', '2% milk', 'skim milk', 'dairy'], category: 'Dairy' },
+      'Eggs': { keywords: ['egg', 'eggs', 'large eggs', 'dozen eggs', 'dz egg'], category: 'Dairy' },
+      'Bread': { keywords: ['bread', 'loaf', 'wheat bread', 'white bread', 'brd'], category: 'Grains' },
+      'Chicken Breast': { keywords: ['chicken breast', 'chicken', 'chkn breast', 'chckn', 'poultry'], category: 'Meat' },
+      'Ground Beef': { keywords: ['ground beef', 'beef', 'grd beef', 'hamburger', 'grnd beef'], category: 'Meat' },
+      'Bacon': { keywords: ['bacon', 'bcn'], category: 'Meat' },
+      'Salmon': { keywords: ['salmon', 'salmn'], category: 'Seafood' },
+      'Pork Chops': { keywords: ['pork chop', 'pork', 'prk chop'], category: 'Meat' },
+      'Cheese': { keywords: ['cheese', 'cheddar', 'chz', 'mozzarella', 'swiss'], category: 'Dairy' },
+      'Yogurt': { keywords: ['yogurt', 'yoghurt', 'ygt', 'yoghrt'], category: 'Dairy' },
+      'Butter': { keywords: ['butter', 'bttr'], category: 'Dairy' },
+      'Lettuce': { keywords: ['lettuce', 'lettce', 'romaine', 'iceberg'], category: 'Vegetables' },
+      'Tomatoes': { keywords: ['tomato', 'tomatoes', 'tmto', 'cherry tomato'], category: 'Vegetables' },
+      'Carrots': { keywords: ['carrot', 'carrots', 'crrt'], category: 'Vegetables' },
+      'Onions': { keywords: ['onion', 'onions'], category: 'Vegetables' },
+      'Potatoes': { keywords: ['potato', 'potatoes', 'ptato', 'russet'], category: 'Vegetables' },
+      'Spinach': { keywords: ['spinach', 'spnch'], category: 'Vegetables' },
+      'Broccoli': { keywords: ['broccoli', 'brocoli', 'brcli'], category: 'Vegetables' },
+      'Peppers': { keywords: ['pepper', 'peppers', 'bell pepper'], category: 'Vegetables' },
+      'Cucumber': { keywords: ['cucumber', 'cucumbers', 'ccmbr'], category: 'Vegetables' },
+      'Mushrooms': { keywords: ['mushroom', 'mushrooms', 'mshrm'], category: 'Vegetables' },
+      'Rice': { keywords: ['rice', 'white rice', 'brown rice'], category: 'Grains' },
+      'Pasta': { keywords: ['pasta', 'spaghetti', 'penne', 'noodles', 'macaroni'], category: 'Grains' },
+      'Cereal': { keywords: ['cereal', 'creal'], category: 'Grains' },
+      'Orange Juice': { keywords: ['orange juice', 'oj', 'orng juice'], category: 'Beverages' },
+    };
     
-    setScannedItems(extractedItems.map((item, idx) => ({
-      ...item,
-      id: `scanned-${Date.now()}-${idx}`,
-      storage: 'Fridge',
-      selected: true
-    })));
+    // Check for exact or partial matches
+    for (const [foodName, { keywords, category }] of Object.entries(foodKeywordMap)) {
+      for (const keyword of keywords) {
+        if (descLower.includes(keyword)) {
+          return {
+            name: foodName,
+            category: category,
+            confidence: 'high'
+          };
+        }
+      }
+    }
     
-    setIsScanning(false);
-    showNotification('✅ Receipt scanned! Review and confirm items below.');
+    return null;
   };
 
   const addScannedItemsToInventory = () => {
@@ -1141,6 +1345,8 @@ const FreshKeepApp = () => {
     setUserPoints(prev => prev + (selectedItems.length * 10));
     showNotification(`✅ Added ${selectedItems.length} items! +${selectedItems.length * 10} points`);
     setScannedItems([]);
+    setOcrText('');
+    setScanProgress(0);
     setShowAddFood(false);
   };
 
@@ -1387,61 +1593,145 @@ const FreshKeepApp = () => {
                         <Camera className="w-16 h-16 mx-auto text-green-600 mb-4" />
                         <h4 className="text-xl font-bold text-gray-800 mb-2">📸 Upload Receipt Photo</h4>
                         <p className="text-gray-600 mb-4">
-                          Our AI will scan and extract all food items automatically
+                          Automatically extract food items from your grocery receipt
                         </p>
+                        
+                        {isScanning && (
+                          <div className="mb-6">
+                            <div className="bg-gray-200 rounded-full h-4 mb-2 overflow-hidden">
+                              <div 
+                                className="bg-gradient-to-r from-green-500 to-emerald-500 h-full rounded-full transition-all duration-300 flex items-center justify-center"
+                                style={{ width: `${scanProgress}%` }}
+                              >
+                                <span className="text-xs text-white font-bold">{scanProgress}%</span>
+                              </div>
+                            </div>
+                            <p className="text-sm text-green-700 font-semibold animate-pulse">
+                              {scanProgress < 60 && '📸 Extracting text with OCR...'}
+                              {scanProgress >= 60 && scanProgress < 75 && '� Parsing receipt structure...'}
+                              {scanProgress >= 75 && scanProgress < 90 && '🔍 Matching food items...'}
+                              {scanProgress >= 90 && '✨ Finalizing results...'}
+                            </p>
+                          </div>
+                        )}
+                        
                         <label className="inline-block">
                           <input
                             type="file"
                             accept="image/*"
                             className="hidden"
+                            disabled={isScanning}
                             onChange={(e) => {
                               if (e.target.files && e.target.files[0]) {
                                 simulateReceiptScan(e.target.files[0]);
                               }
                             }}
                           />
-                          <span className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-8 py-4 rounded-xl font-bold cursor-pointer inline-flex items-center gap-2 hover:shadow-lg transition-all">
+                          <span className={`bg-gradient-to-r from-green-600 to-emerald-600 text-white px-8 py-4 rounded-xl font-bold cursor-pointer inline-flex items-center gap-2 hover:shadow-lg transition-all ${isScanning ? 'opacity-50 cursor-not-allowed' : ''}`}>
                             <Upload className="w-5 h-5" />
                             {isScanning ? 'Scanning... 🤖' : 'Upload Receipt'}
                           </span>
                         </label>
                         <p className="text-sm text-gray-500 mt-4">
-                          Supports JPG, PNG - AI extracts items in seconds
+                          📱 JPG, PNG supported • OCR text extraction • Smart parsing • UPC barcode lookup
                         </p>
                       </div>
                     ) : (
                       <div>
                         <h4 className="font-bold text-gray-800 mb-3">✅ AI Scanned Items ({scannedItems.length})</h4>
+                        
                         <div className="space-y-3 mb-4 max-h-96 overflow-y-auto">
                           {scannedItems.map(item => (
-                            <div key={item.id} className="flex items-center gap-3 bg-green-50 p-3 rounded-xl">
-                              <input
-                                type="checkbox"
-                                checked={item.selected}
-                                onChange={(e) => {
-                                  setScannedItems(scannedItems.map(i => 
-                                    i.id === item.id ? { ...i, selected: e.target.checked } : i
-                                  ));
-                                }}
-                                className="w-5 h-5"
-                              />
-                              <div className="flex-1">
-                                <p className="font-semibold text-gray-800">{item.name}</p>
-                                <p className="text-sm text-gray-600">{item.quantity}</p>
+                            <div key={item.id} className="bg-green-50 p-3 rounded-xl">
+                              <div className="flex items-start gap-3">
+                                <input
+                                  type="checkbox"
+                                  checked={item.selected}
+                                  onChange={(e) => {
+                                    setScannedItems(scannedItems.map(i => 
+                                      i.id === item.id ? { ...i, selected: e.target.checked } : i
+                                    ));
+                                  }}
+                                  className="w-5 h-5 mt-1"
+                                />
+                                
+                                <div className="flex-1">
+                                  {editingScannedItem === item.id ? (
+                                    // Editing mode
+                                    <div className="space-y-2">
+                                      <input
+                                        type="text"
+                                        value={item.name}
+                                        onChange={(e) => {
+                                          setScannedItems(scannedItems.map(i => 
+                                            i.id === item.id ? { ...i, name: e.target.value } : i
+                                          ));
+                                        }}
+                                        className="w-full px-3 py-2 border-2 border-green-500 rounded-lg font-semibold"
+                                        placeholder="Food name"
+                                      />
+                                      <div className="flex gap-2">
+                                        <input
+                                          type="text"
+                                          value={item.quantity}
+                                          onChange={(e) => {
+                                            setScannedItems(scannedItems.map(i => 
+                                              i.id === item.id ? { ...i, quantity: e.target.value } : i
+                                            ));
+                                          }}
+                                          className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm"
+                                          placeholder="Quantity"
+                                        />
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <button
+                                          onClick={() => setEditingScannedItem(null)}
+                                          className="flex-1 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-green-700"
+                                        >
+                                          ✓ Done
+                                        </button>
+                                        <button
+                                          onClick={() => {
+                                            setScannedItems(scannedItems.filter(i => i.id !== item.id));
+                                            setEditingScannedItem(null);
+                                          }}
+                                          className="px-3 py-2 bg-red-100 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-200"
+                                        >
+                                          🗑️ Delete
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    // Display mode
+                                    <div>
+                                      <p className="font-semibold text-gray-800">{item.name}</p>
+                                      <p className="text-sm text-gray-600">
+                                        {item.quantity}
+                                      </p>
+                                      <button
+                                        onClick={() => setEditingScannedItem(item.id)}
+                                        className="mt-2 text-xs text-blue-600 hover:text-blue-800 font-semibold"
+                                      >
+                                        ✏️ Edit
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                <select
+                                  value={item.storage}
+                                  onChange={(e) => {
+                                    setScannedItems(scannedItems.map(i => 
+                                      i.id === item.id ? { ...i, storage: e.target.value } : i
+                                    ));
+                                  }}
+                                  className="px-3 py-2 border-2 border-gray-300 rounded-lg text-sm"
+                                >
+                                  <option>Fridge</option>
+                                  <option>Freezer</option>
+                                  <option>Pantry</option>
+                                </select>
                               </div>
-                              <select
-                                value={item.storage}
-                                onChange={(e) => {
-                                  setScannedItems(scannedItems.map(i => 
-                                    i.id === item.id ? { ...i, storage: e.target.value } : i
-                                  ));
-                                }}
-                                className="px-3 py-2 border-2 border-gray-300 rounded-lg text-sm"
-                              >
-                                <option>Fridge</option>
-                                <option>Freezer</option>
-                                <option>Pantry</option>
-                              </select>
                             </div>
                           ))}
                         </div>
@@ -1453,7 +1743,11 @@ const FreshKeepApp = () => {
                             Add Selected Items ({scannedItems.filter(i => i.selected).length})
                           </button>
                           <button
-                            onClick={() => setScannedItems([])}
+                            onClick={() => {
+                              setScannedItems([]);
+                              setOcrText('');
+                              setScanProgress(0);
+                            }}
                             className="px-6 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300 transition-all"
                           >
                             Cancel
