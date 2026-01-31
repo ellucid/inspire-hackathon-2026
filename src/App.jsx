@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Camera, Plus, Trash2, ChevronRight, Star, Award, TrendingDown, Clock, AlertCircle, Check, Gift, Trophy, Target, Flame, Upload, X } from 'lucide-react';
+import { Camera, Plus, Trash2, ChevronRight, Star, Award, TrendingDown, Clock, AlertCircle, Check, Gift, Trophy, Target, Flame, Upload, X, Edit } from 'lucide-react';
 
 const FreshKeepApp = () => {
+  console.log('FreshKeepApp component rendering...');
+  console.log('React version:', React.version);
+  
   const [activeTab, setActiveTab] = useState('kitchen');
   const [userPoints, setUserPoints] = useState(250);
   const [badges, setBadges] = useState(['Waste Warrior', 'Recipe Rescuer']);
@@ -13,13 +16,20 @@ const FreshKeepApp = () => {
   const [notification, setNotification] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
   const [scannedItems, setScannedItems] = useState([]);
+  const [editingItem, setEditingItem] = useState(null);
+  const [cuisineFilter, setCuisineFilter] = useState('All');
+  const [leftoverName, setLeftoverName] = useState('');
+  const [leftoverPortions, setLeftoverPortions] = useState(1);
+  const [servings, setServings] = useState(2);
 
   // Manual add food form state
   const [manualFoodName, setManualFoodName] = useState('');
+  const [manualFoodType, setManualFoodType] = useState('');
   const [manualQuantity, setManualQuantity] = useState('1 unit');
   const [manualStorage, setManualStorage] = useState('Fridge');
   const [manualExpiryDays, setManualExpiryDays] = useState(7);
   const [useCustomExpiry, setUseCustomExpiry] = useState(false);
+  const [hasLoadedFromStorage, setHasLoadedFromStorage] = useState(false);
 
   const [foodItems, setFoodItems] = useState([
     {
@@ -71,6 +81,97 @@ const FreshKeepApp = () => {
     }
   ]);
 
+  // Load data from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedFoodItems = localStorage.getItem('freshkeep_foodItems');
+      const savedLeftovers = localStorage.getItem('freshkeep_leftovers');
+      const savedUserPoints = localStorage.getItem('freshkeep_userPoints');
+      const savedBadges = localStorage.getItem('freshkeep_badges');
+      const savedWastePreventedKg = localStorage.getItem('freshkeep_wastePreventedKg');
+      const savedRecipesCookedCount = localStorage.getItem('freshkeep_recipesCookedCount');
+      
+      if (savedFoodItems) {
+        const items = JSON.parse(savedFoodItems);
+        // Convert date strings back to Date objects
+        const parsedItems = items.map(item => ({
+          ...item,
+          purchaseDate: new Date(item.purchaseDate),
+          expiryDate: new Date(item.expiryDate)
+        }));
+        setFoodItems(parsedItems);
+      }
+      
+      if (savedLeftovers) {
+        const items = JSON.parse(savedLeftovers);
+        const parsedItems = items.map(item => ({
+          ...item,
+          date: new Date(item.date),
+          expiryDate: new Date(item.expiryDate)
+        }));
+        setLeftovers(parsedItems);
+      }
+      
+      if (savedUserPoints) setUserPoints(parseInt(savedUserPoints));
+      if (savedBadges) setBadges(JSON.parse(savedBadges));
+      if (savedWastePreventedKg) setWastePreventedKg(parseFloat(savedWastePreventedKg));
+      if (savedRecipesCookedCount) setRecipesCookedCount(parseInt(savedRecipesCookedCount));
+    } catch (error) {
+      console.error('Error loading from localStorage:', error);
+      // Clear corrupted data
+      localStorage.removeItem('freshkeep_foodItems');
+      localStorage.removeItem('freshkeep_leftovers');
+      localStorage.removeItem('freshkeep_userPoints');
+      localStorage.removeItem('freshkeep_badges');
+      localStorage.removeItem('freshkeep_wastePreventedKg');
+      localStorage.removeItem('freshkeep_recipesCookedCount');
+    } finally {
+      setHasLoadedFromStorage(true);
+    }
+  }, []);
+
+  // Save foodItems to localStorage whenever they change (but not on initial load)
+  useEffect(() => {
+    if (hasLoadedFromStorage) {
+      localStorage.setItem('freshkeep_foodItems', JSON.stringify(foodItems));
+    }
+  }, [foodItems, hasLoadedFromStorage]);
+
+  // Save leftovers to localStorage whenever they change
+  useEffect(() => {
+    if (hasLoadedFromStorage) {
+      localStorage.setItem('freshkeep_leftovers', JSON.stringify(leftovers));
+    }
+  }, [leftovers, hasLoadedFromStorage]);
+
+  // Save user stats to localStorage
+  useEffect(() => {
+    if (hasLoadedFromStorage) {
+      localStorage.setItem('freshkeep_userPoints', userPoints.toString());
+    }
+  }, [userPoints, hasLoadedFromStorage]);
+
+  useEffect(() => {
+    if (hasLoadedFromStorage) {
+      localStorage.setItem('freshkeep_badges', JSON.stringify(badges));
+    }
+  }, [badges, hasLoadedFromStorage]);
+
+  useEffect(() => {
+    if (hasLoadedFromStorage) {
+      localStorage.setItem('freshkeep_wastePreventedKg', wastePreventedKg.toString());
+    }
+  }, [wastePreventedKg, hasLoadedFromStorage]);
+
+  useEffect(() => {
+    if (hasLoadedFromStorage) {
+      localStorage.setItem('freshkeep_recipesCookedCount', recipesCookedCount.toString());
+    }
+  }, [recipesCookedCount, hasLoadedFromStorage]);
+
+  // Track recipe count and notify when new AI recipes become available
+  const [previousRecipeCount, setPreviousRecipeCount] = useState(0);
+
   // Expanded food database
   const FOOD_DATABASE = {
     'Strawberries': { days: 3, fridge: 7, freezer: 365, category: 'Fruits', emoji: '🍓' },
@@ -119,52 +220,754 @@ const FreshKeepApp = () => {
       id: 1,
       name: 'Strawberry Spinach Salad',
       ingredients: ['Strawberries', 'Spinach'],
+      detailedIngredients: [
+        '2 cups fresh strawberries, sliced',
+        '4 cups baby spinach',
+        '1/4 cup crumbled feta cheese',
+        '1/4 cup sliced almonds',
+        '2 tbsp balsamic vinegar',
+        '3 tbsp olive oil',
+        'Salt and pepper to taste'
+      ],
       time: 15,
       difficulty: 'Easy',
       cuisine: 'American',
       steps: [
         'Wash and slice strawberries',
-        'Mix spinach with strawberries',
-        'Crumble feta cheese on top',
-        'Drizzle with balsamic vinegar and olive oil',
-        'Toss and serve immediately'
+        'Place spinach in a large bowl',
+        'Add sliced strawberries on top',
+        'Sprinkle with crumbled feta cheese and sliced almonds',
+        'In a small bowl, whisk together balsamic vinegar and olive oil',
+        'Drizzle dressing over salad',
+        'Season with salt and pepper',
+        'Toss gently and serve immediately'
       ],
-      emoji: '🥗'
+      emoji: '🥗',
+      isAiGenerated: false
     },
     {
       id: 2,
       name: 'Garlic Spinach Chicken',
       ingredients: ['Chicken Breast', 'Spinach'],
+      detailedIngredients: [
+        '2 large chicken breasts',
+        '3 cups fresh spinach',
+        '4 cloves garlic, minced',
+        '1/2 cup heavy cream',
+        '1/4 cup parmesan cheese, grated',
+        '2 tbsp olive oil',
+        'Salt and pepper to taste',
+        '1/2 tsp Italian seasoning'
+      ],
       time: 25,
       difficulty: 'Medium',
       cuisine: 'Italian',
       steps: [
-        'Season chicken with salt and pepper',
-        'Pan-fry chicken until golden (6-8 min per side)',
-        'Sauté garlic until fragrant',
-        'Add spinach and wilt',
-        'Add cream and parmesan, simmer 5 minutes',
-        'Serve chicken topped with creamy spinach'
+        'Season chicken breasts with salt, pepper, and Italian seasoning',
+        'Heat olive oil in a large skillet over medium-high heat',
+        'Add chicken and cook 6-8 minutes per side until golden and cooked through',
+        'Remove chicken and set aside',
+        'In the same pan, add minced garlic and sauté for 1 minute until fragrant',
+        'Add spinach and cook until wilted, about 2-3 minutes',
+        'Pour in heavy cream and bring to a simmer',
+        'Stir in parmesan cheese until melted',
+        'Return chicken to pan and coat with sauce',
+        'Simmer for 5 minutes',
+        'Serve hot with pasta or rice'
       ],
-      emoji: '🍗'
+      emoji: '🍗',
+      isAiGenerated: false
     },
     {
       id: 3,
       name: 'Quick Berry Smoothie',
       ingredients: ['Strawberries'],
+      detailedIngredients: [
+        '1 cup fresh strawberries, hulled',
+        '1 cup Greek yogurt',
+        '1/2 cup milk or almond milk',
+        '2 tbsp honey',
+        '1 cup ice cubes',
+        '1/2 tsp vanilla extract (optional)'
+      ],
       time: 5,
       difficulty: 'Easy',
       cuisine: 'American',
       steps: [
-        'Hull strawberries',
-        'Blend strawberries with yogurt',
-        'Add honey to taste',
-        'Add ice and blend until smooth',
-        'Serve immediately'
+        'Hull and wash strawberries',
+        'Add strawberries to blender',
+        'Add Greek yogurt, milk, and honey',
+        'Add vanilla extract if using',
+        'Add ice cubes',
+        'Blend on high until smooth and creamy',
+        'Taste and add more honey if desired',
+        'Pour into glasses and serve immediately',
+        'Optional: garnish with a strawberry slice'
       ],
-      emoji: '🥤'
+      emoji: '🥤',
+      isAiGenerated: false
     }
   ];
+
+  // AI Recipe Generator - generates recipes based on available ingredients
+  const generateAIRecipes = () => {
+    const aiRecipeTemplates = [
+      {
+        id: 100,
+        name: 'Honey Garlic Chicken Stir-Fry',
+        ingredients: ['Chicken Breast'],
+        detailedIngredients: [
+          '1 lb chicken breast, cubed',
+          '3 tbsp honey',
+          '3 cloves garlic, minced',
+          '2 tbsp soy sauce',
+          '1 tbsp olive oil',
+          '1 tsp ginger, minced',
+          '2 cups mixed vegetables',
+          'Sesame seeds for garnish'
+        ],
+        time: 20,
+        difficulty: 'Easy',
+        cuisine: 'Asian',
+        steps: [
+          'Heat oil in a wok or large skillet over high heat',
+          'Add chicken and cook until golden, about 5-6 minutes',
+          'Add garlic and ginger, stir for 30 seconds',
+          'Mix honey and soy sauce in a bowl',
+          'Pour sauce over chicken',
+          'Add vegetables and stir-fry for 3-4 minutes',
+          'Garnish with sesame seeds',
+          'Serve over rice or noodles'
+        ],
+        emoji: '🍜',
+        isAiGenerated: true
+      },
+      {
+        id: 101,
+        name: 'Creamy Tomato Pasta',
+        ingredients: ['Tomatoes'],
+        detailedIngredients: [
+          '4 large tomatoes, diced',
+          '8 oz pasta of choice',
+          '1/2 cup heavy cream',
+          '3 cloves garlic, minced',
+          '2 tbsp olive oil',
+          '1/4 cup fresh basil',
+          '1/4 cup parmesan cheese',
+          'Salt and pepper to taste'
+        ],
+        time: 25,
+        difficulty: 'Easy',
+        cuisine: 'Italian',
+        steps: [
+          'Cook pasta according to package directions',
+          'Heat olive oil in a large pan',
+          'Sauté garlic until fragrant',
+          'Add diced tomatoes and cook until soft, about 8 minutes',
+          'Stir in heavy cream and simmer for 5 minutes',
+          'Add cooked pasta to sauce',
+          'Toss with fresh basil and parmesan',
+          'Season with salt and pepper and serve'
+        ],
+        emoji: '🍝',
+        isAiGenerated: true
+      },
+      {
+        id: 102,
+        name: 'Spinach and Feta Quesadilla',
+        ingredients: ['Spinach'],
+        detailedIngredients: [
+          '2 cups fresh spinach',
+          '4 large tortillas',
+          '1 cup shredded cheese',
+          '1/2 cup crumbled feta',
+          '2 tbsp olive oil',
+          '1/4 cup diced onion',
+          'Sour cream for serving',
+          'Salsa for serving'
+        ],
+        time: 15,
+        difficulty: 'Easy',
+        cuisine: 'Mexican',
+        steps: [
+          'Sauté onion in olive oil until soft',
+          'Add spinach and cook until wilted',
+          'Place tortilla in a pan',
+          'Spread spinach mixture on half of the tortilla',
+          'Sprinkle with cheese and feta',
+          'Fold tortilla in half',
+          'Cook until golden brown on both sides, about 3 minutes per side',
+          'Cut into wedges and serve with sour cream and salsa'
+        ],
+        emoji: '🌮',
+        isAiGenerated: true
+      },
+      {
+        id: 103,
+        name: 'Baked Salmon with Lemon',
+        ingredients: ['Salmon'],
+        detailedIngredients: [
+          '2 salmon fillets',
+          '2 lemons, sliced',
+          '3 cloves garlic, minced',
+          '2 tbsp olive oil',
+          '1 tbsp fresh dill',
+          'Salt and pepper to taste',
+          '1/4 cup white wine (optional)'
+        ],
+        time: 30,
+        difficulty: 'Easy',
+        cuisine: 'American',
+        steps: [
+          'Preheat oven to 400°F (200°C)',
+          'Place salmon in a baking dish',
+          'Drizzle with olive oil',
+          'Top with garlic, lemon slices, and dill',
+          'Season with salt and pepper',
+          'Pour white wine around the salmon if using',
+          'Bake for 15-20 minutes until fish flakes easily',
+          'Serve with roasted vegetables or rice'
+        ],
+        emoji: '🐟',
+        isAiGenerated: true
+      },
+      {
+        id: 104,
+        name: 'Banana Oat Pancakes',
+        ingredients: ['Bananas'],
+        detailedIngredients: [
+          '2 ripe bananas, mashed',
+          '2 eggs',
+          '1 cup rolled oats',
+          '1 tsp vanilla extract',
+          '1 tsp baking powder',
+          '1/2 tsp cinnamon',
+          'Butter for cooking',
+          'Maple syrup for serving'
+        ],
+        time: 20,
+        difficulty: 'Easy',
+        cuisine: 'American',
+        steps: [
+          'Mash bananas in a bowl',
+          'Add eggs and vanilla, mix well',
+          'Blend oats in a food processor until flour-like',
+          'Add oat flour, baking powder, and cinnamon to banana mixture',
+          'Heat butter in a pan over medium heat',
+          'Pour batter to form pancakes',
+          'Cook until bubbles form, then flip',
+          'Cook until golden brown',
+          'Serve with maple syrup and fresh fruit'
+        ],
+        emoji: '🥞',
+        isAiGenerated: true
+      },
+      {
+        id: 105,
+        name: 'Caprese Salad',
+        ingredients: ['Tomatoes'],
+        detailedIngredients: [
+          '3 large tomatoes, sliced',
+          '8 oz fresh mozzarella, sliced',
+          '1/4 cup fresh basil leaves',
+          '3 tbsp balsamic glaze',
+          '2 tbsp extra virgin olive oil',
+          'Sea salt to taste',
+          'Black pepper to taste'
+        ],
+        time: 10,
+        difficulty: 'Easy',
+        cuisine: 'Italian',
+        steps: [
+          'Slice tomatoes and mozzarella into 1/4 inch slices',
+          'Arrange alternating slices on a platter',
+          'Tuck basil leaves between slices',
+          'Drizzle with olive oil',
+          'Drizzle with balsamic glaze',
+          'Sprinkle with sea salt and black pepper',
+          'Serve immediately at room temperature'
+        ],
+        emoji: '🍅',
+        isAiGenerated: true
+      },
+      {
+        id: 106,
+        name: 'Apple Cinnamon Oatmeal',
+        ingredients: ['Apples'],
+        detailedIngredients: [
+          '2 apples, diced',
+          '2 cups rolled oats',
+          '4 cups water or milk',
+          '2 tsp cinnamon',
+          '2 tbsp brown sugar',
+          '1 tsp vanilla extract',
+          '1/4 cup raisins (optional)',
+          'Chopped walnuts for topping'
+        ],
+        time: 15,
+        difficulty: 'Easy',
+        cuisine: 'American',
+        steps: [
+          'Bring water or milk to a boil',
+          'Add oats and reduce heat to simmer',
+          'Stir in diced apples and cinnamon',
+          'Cook for 5-7 minutes, stirring occasionally',
+          'Add brown sugar, vanilla, and raisins',
+          'Cook until oats are creamy',
+          'Serve in bowls topped with walnuts',
+          'Drizzle with honey if desired'
+        ],
+        emoji: '🍎',
+        isAiGenerated: true
+      },
+      {
+        id: 107,
+        name: 'Veggie Egg Scramble',
+        ingredients: ['Eggs', 'Spinach', 'Tomatoes'],
+        detailedIngredients: [
+          '4 eggs',
+          '1 cup spinach, chopped',
+          '1 tomato, diced',
+          '1/4 cup cheese, shredded',
+          '2 tbsp milk',
+          '1 tbsp butter',
+          'Salt and pepper to taste',
+          'Hot sauce (optional)'
+        ],
+        time: 10,
+        difficulty: 'Easy',
+        cuisine: 'American',
+        steps: [
+          'Whisk eggs with milk, salt, and pepper',
+          'Melt butter in a non-stick pan',
+          'Add spinach and tomato, sauté for 2 minutes',
+          'Pour in egg mixture',
+          'Stir gently as eggs cook',
+          'When nearly set, add cheese',
+          'Continue stirring until eggs are fully cooked',
+          'Serve hot with toast'
+        ],
+        emoji: '🍳',
+        isAiGenerated: true
+      },
+      {
+        id: 108,
+        name: 'Teriyaki Beef Bowl',
+        ingredients: ['Beef'],
+        detailedIngredients: [
+          '1 lb beef sirloin, sliced thin',
+          '1/4 cup teriyaki sauce',
+          '2 tbsp sesame oil',
+          '3 cloves garlic, minced',
+          '1 tbsp fresh ginger, grated',
+          '2 cups cooked rice',
+          '2 green onions, sliced',
+          'Sesame seeds for garnish'
+        ],
+        time: 25,
+        difficulty: 'Easy',
+        cuisine: 'Asian',
+        steps: [
+          'Heat sesame oil in a large skillet or wok',
+          'Add garlic and ginger, sauté for 1 minute',
+          'Add beef slices and cook until browned',
+          'Pour teriyaki sauce over beef',
+          'Simmer for 3-5 minutes until sauce thickens',
+          'Serve over hot rice',
+          'Garnish with green onions and sesame seeds',
+          'Optional: add steamed vegetables'
+        ],
+        emoji: '🥩',
+        isAiGenerated: true
+      },
+      {
+        id: 109,
+        name: 'Mediterranean Quinoa Bowl',
+        ingredients: ['Cucumbers', 'Tomatoes'],
+        detailedIngredients: [
+          '1 cup quinoa, cooked',
+          '1 cucumber, diced',
+          '2 tomatoes, diced',
+          '1/2 cup feta cheese, crumbled',
+          '1/4 cup kalamata olives',
+          '3 tbsp olive oil',
+          '2 tbsp lemon juice',
+          'Fresh parsley for garnish'
+        ],
+        time: 15,
+        difficulty: 'Easy',
+        cuisine: 'Mediterranean',
+        steps: [
+          'Cook quinoa according to package directions',
+          'Let quinoa cool slightly',
+          'Dice cucumber and tomatoes',
+          'In a large bowl, combine quinoa and vegetables',
+          'Add feta cheese and olives',
+          'Drizzle with olive oil and lemon juice',
+          'Toss gently to combine',
+          'Garnish with fresh parsley and serve'
+        ],
+        emoji: '🥗',
+        isAiGenerated: true
+      },
+      {
+        id: 110,
+        name: 'BBQ Pulled Pork Sandwich',
+        ingredients: ['Pork'],
+        detailedIngredients: [
+          '2 lbs pork shoulder',
+          '1 cup BBQ sauce',
+          '1/2 cup apple cider vinegar',
+          '2 tbsp brown sugar',
+          '1 tbsp paprika',
+          '1 tsp garlic powder',
+          '4 hamburger buns',
+          'Coleslaw for topping'
+        ],
+        time: 45,
+        difficulty: 'Medium',
+        cuisine: 'American',
+        steps: [
+          'Season pork with paprika, garlic powder, and brown sugar',
+          'Place in slow cooker or pot',
+          'Add vinegar and half the BBQ sauce',
+          'Cook on low for 4-6 hours until tender',
+          'Shred pork with two forks',
+          'Mix in remaining BBQ sauce',
+          'Toast buns lightly',
+          'Serve pork on buns topped with coleslaw'
+        ],
+        emoji: '🥪',
+        isAiGenerated: true
+      },
+      {
+        id: 111,
+        name: 'Shrimp Fried Rice',
+        ingredients: ['Shrimp', 'Rice'],
+        detailedIngredients: [
+          '1 lb shrimp, peeled and deveined',
+          '3 cups cooked rice (day-old works best)',
+          '2 eggs, beaten',
+          '1 cup mixed vegetables',
+          '3 tbsp soy sauce',
+          '2 tbsp sesame oil',
+          '3 cloves garlic, minced',
+          'Green onions for garnish'
+        ],
+        time: 20,
+        difficulty: 'Easy',
+        cuisine: 'Asian',
+        steps: [
+          'Heat sesame oil in a large wok',
+          'Add shrimp and cook until pink, set aside',
+          'Scramble eggs in the wok, set aside',
+          'Add garlic and mixed vegetables, stir-fry 3 minutes',
+          'Add cold rice, breaking up clumps',
+          'Return shrimp and eggs to wok',
+          'Pour soy sauce over everything',
+          'Toss well and serve hot with green onions'
+        ],
+        emoji: '🍤',
+        isAiGenerated: true
+      },
+      {
+        id: 112,
+        name: 'Mushroom Risotto',
+        ingredients: ['Mushrooms', 'Rice'],
+        detailedIngredients: [
+          '2 cups arborio rice',
+          '2 cups mushrooms, sliced',
+          '6 cups chicken or vegetable broth',
+          '1/2 cup white wine',
+          '1/2 cup parmesan cheese',
+          '2 tbsp butter',
+          '1 onion, diced',
+          'Fresh thyme for garnish'
+        ],
+        time: 40,
+        difficulty: 'Medium',
+        cuisine: 'Italian',
+        steps: [
+          'Heat broth in a pot and keep warm',
+          'Sauté onion in butter until soft',
+          'Add mushrooms and cook until browned',
+          'Add rice and stir for 2 minutes',
+          'Add wine and stir until absorbed',
+          'Add broth one ladle at a time, stirring constantly',
+          'Continue until rice is creamy and al dente',
+          'Stir in parmesan and serve with thyme'
+        ],
+        emoji: '🍄',
+        isAiGenerated: true
+      },
+      {
+        id: 113,
+        name: 'Fish Tacos',
+        ingredients: ['Fish', 'Cabbage'],
+        detailedIngredients: [
+          '1 lb white fish fillets',
+          '2 cups cabbage, shredded',
+          '8 corn tortillas',
+          '1/2 cup sour cream',
+          '1 lime, juiced',
+          '1 tsp cumin',
+          '1 tsp chili powder',
+          'Fresh cilantro for garnish'
+        ],
+        time: 25,
+        difficulty: 'Easy',
+        cuisine: 'Mexican',
+        steps: [
+          'Season fish with cumin and chili powder',
+          'Grill or pan-fry fish until cooked through',
+          'Break fish into chunks',
+          'Warm tortillas in a dry pan',
+          'Mix sour cream with lime juice',
+          'Place fish on tortillas',
+          'Top with shredded cabbage',
+          'Drizzle with lime crema and garnish with cilantro'
+        ],
+        emoji: '🌮',
+        isAiGenerated: true
+      },
+      {
+        id: 114,
+        name: 'Berry Smoothie Bowl',
+        ingredients: ['Strawberries', 'Bananas'],
+        detailedIngredients: [
+          '1 cup frozen strawberries',
+          '1 frozen banana',
+          '1/2 cup Greek yogurt',
+          '1/4 cup milk',
+          '1 tbsp honey',
+          'Granola for topping',
+          'Fresh berries for topping',
+          'Chia seeds for topping'
+        ],
+        time: 10,
+        difficulty: 'Easy',
+        cuisine: 'American',
+        steps: [
+          'Add frozen fruit, yogurt, and milk to blender',
+          'Blend until smooth and thick',
+          'Pour into a bowl',
+          'Arrange fresh berries on top',
+          'Sprinkle with granola',
+          'Add chia seeds',
+          'Drizzle with honey',
+          'Serve immediately with a spoon'
+        ],
+        emoji: '🍓',
+        isAiGenerated: true
+      },
+      {
+        id: 115,
+        name: 'Chicken Curry',
+        ingredients: ['Chicken Breast', 'Potatoes'],
+        detailedIngredients: [
+          '1.5 lbs chicken breast, cubed',
+          '2 potatoes, cubed',
+          '1 can coconut milk',
+          '3 tbsp curry powder',
+          '1 onion, diced',
+          '3 cloves garlic, minced',
+          '1 tbsp ginger, grated',
+          'Fresh cilantro for garnish'
+        ],
+        time: 35,
+        difficulty: 'Medium',
+        cuisine: 'Asian',
+        steps: [
+          'Heat oil in a large pot',
+          'Sauté onion until soft',
+          'Add garlic, ginger, and curry powder',
+          'Add chicken and brown on all sides',
+          'Add potatoes and stir to coat',
+          'Pour in coconut milk',
+          'Simmer for 20-25 minutes until potatoes are tender',
+          'Garnish with cilantro and serve over rice'
+        ],
+        emoji: '🍛',
+        isAiGenerated: true
+      },
+      {
+        id: 116,
+        name: 'Greek Pita Pocket',
+        ingredients: ['Cucumbers', 'Tomatoes', 'Lettuce'],
+        detailedIngredients: [
+          '4 pita breads',
+          '1 cucumber, sliced',
+          '2 tomatoes, diced',
+          '1 cup lettuce, shredded',
+          '1/2 cup feta cheese',
+          '1/2 cup hummus',
+          '1/4 cup tzatziki sauce',
+          'Fresh mint for garnish'
+        ],
+        time: 15,
+        difficulty: 'Easy',
+        cuisine: 'Mediterranean',
+        steps: [
+          'Warm pita breads slightly',
+          'Slice pita to create pockets',
+          'Spread hummus inside each pocket',
+          'Layer cucumber, tomatoes, and lettuce',
+          'Crumble feta cheese on top',
+          'Drizzle with tzatziki sauce',
+          'Add fresh mint leaves',
+          'Serve immediately'
+        ],
+        emoji: '🥙',
+        isAiGenerated: true
+      },
+      {
+        id: 117,
+        name: 'Sweet Potato Hash',
+        ingredients: ['Sweet Potatoes', 'Eggs'],
+        detailedIngredients: [
+          '2 sweet potatoes, diced',
+          '4 eggs',
+          '1 onion, diced',
+          '1 bell pepper, diced',
+          '2 tbsp olive oil',
+          '1 tsp paprika',
+          'Salt and pepper to taste',
+          'Fresh parsley for garnish'
+        ],
+        time: 30,
+        difficulty: 'Easy',
+        cuisine: 'American',
+        steps: [
+          'Heat olive oil in a large skillet',
+          'Add sweet potatoes and cook for 10 minutes',
+          'Add onion and bell pepper',
+          'Season with paprika, salt, and pepper',
+          'Cook until potatoes are crispy and tender',
+          'Make 4 wells in the hash',
+          'Crack an egg into each well',
+          'Cover and cook until eggs are set, garnish with parsley'
+        ],
+        emoji: '🍠',
+        isAiGenerated: true
+      },
+      {
+        id: 118,
+        name: 'Pesto Pasta with Chicken',
+        ingredients: ['Chicken Breast', 'Tomatoes'],
+        detailedIngredients: [
+          '12 oz pasta',
+          '2 chicken breasts, sliced',
+          '1/2 cup pesto sauce',
+          '1 cup cherry tomatoes, halved',
+          '1/4 cup parmesan cheese',
+          '2 tbsp olive oil',
+          'Fresh basil for garnish',
+          'Salt and pepper to taste'
+        ],
+        time: 25,
+        difficulty: 'Easy',
+        cuisine: 'Italian',
+        steps: [
+          'Cook pasta according to package directions',
+          'Season chicken with salt and pepper',
+          'Heat olive oil in a pan',
+          'Cook chicken until golden and cooked through',
+          'Add cherry tomatoes and cook for 2 minutes',
+          'Drain pasta and return to pot',
+          'Toss pasta with pesto sauce',
+          'Add chicken and tomatoes, serve with parmesan'
+        ],
+        emoji: '🍝',
+        isAiGenerated: true
+      },
+      {
+        id: 119,
+        name: 'Black Bean Burrito',
+        ingredients: ['Black Beans', 'Rice'],
+        detailedIngredients: [
+          '2 cups black beans, cooked',
+          '2 cups rice, cooked',
+          '4 large tortillas',
+          '1 cup shredded cheese',
+          '1 cup salsa',
+          '1/2 cup sour cream',
+          '1 avocado, sliced',
+          'Fresh cilantro for garnish'
+        ],
+        time: 15,
+        difficulty: 'Easy',
+        cuisine: 'Mexican',
+        steps: [
+          'Warm tortillas in a pan',
+          'Layer rice in the center of each tortilla',
+          'Add black beans on top of rice',
+          'Sprinkle with shredded cheese',
+          'Add salsa and sour cream',
+          'Place avocado slices',
+          'Fold sides in and roll tightly',
+          'Serve with cilantro garnish'
+        ],
+        emoji: '🌯',
+        isAiGenerated: true
+      }
+    ];
+
+    // Filter AI recipes based on available ingredients
+    const availableIngredients = foodItems.map(item => item.name);
+    const matchingRecipes = aiRecipeTemplates.filter(recipe => 
+      recipe.ingredients.some(ing => availableIngredients.includes(ing))
+    );
+
+    // Combine base recipes with matching AI recipes
+    return [...recipes, ...matchingRecipes];
+  };
+
+  // Function to scale recipe ingredients based on servings
+  const scaleIngredient = (ingredient, servings) => {
+    const baseServings = 2; // Default servings for recipes
+    const scaleFactor = servings / baseServings;
+    
+    // Extract numbers from ingredient string
+    const numberPattern = /(\d+\.?\d*|\d*\.?\d+)/g;
+    const numbers = ingredient.match(numberPattern);
+    
+    if (!numbers) return ingredient; // No numbers to scale
+    
+    let scaledIngredient = ingredient;
+    numbers.forEach(num => {
+      const originalNum = parseFloat(num);
+      const scaledNum = (originalNum * scaleFactor).toFixed(2).replace(/\.?0+$/, ''); // Remove trailing zeros
+      // Replace the first occurrence of this number
+      scaledIngredient = scaledIngredient.replace(num, scaledNum);
+    });
+    
+    return scaledIngredient;
+  };
+
+  const scaleRecipeIngredients = (recipe, servings) => {
+    return {
+      ...recipe,
+      detailedIngredients: recipe.detailedIngredients.map(ing => scaleIngredient(ing, servings))
+    };
+  };
+
+  // Get all recipes (base + AI generated)
+  const allRecipes = generateAIRecipes();
+
+  // Filter recipes by cuisine
+  const filteredRecipes = cuisineFilter === 'All' 
+    ? allRecipes 
+    : allRecipes.filter(recipe => recipe.cuisine === cuisineFilter);
+
+  // Notify when new AI recipes become available
+  useEffect(() => {
+    const aiRecipeCount = allRecipes.filter(r => r.isAiGenerated).length;
+    if (hasLoadedFromStorage && previousRecipeCount > 0 && aiRecipeCount > previousRecipeCount) {
+      const newRecipes = aiRecipeCount - previousRecipeCount;
+      showNotification(`🎉 ${newRecipes} new AI recipe${newRecipes > 1 ? 's' : ''} available!`);
+    }
+    setPreviousRecipeCount(aiRecipeCount);
+  }, [foodItems.length]);
 
   const challenges = [
     {
@@ -212,6 +1015,69 @@ const FreshKeepApp = () => {
   const deleteFood = (id) => {
     setFoodItems(foodItems.filter(f => f.id !== id));
     showNotification('Item removed from inventory');
+  };
+
+  const startEditingFood = (item) => {
+    setEditingItem(item);
+    setManualFoodName(item.name);
+    setManualFoodType(item.category || '');
+    setManualQuantity(item.quantity);
+    setManualStorage(item.storage);
+    setManualExpiryDays(item.daysUntilExpiry);
+    setUseCustomExpiry(true);
+    setShowAddFood(true);
+    setAddMethod('manual');
+    
+    // Scroll to top to show the edit form
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
+  };
+
+  const saveEditedFood = () => {
+    if (!manualFoodName.trim()) {
+      showNotification('⚠️ Please enter a food name');
+      return;
+    }
+
+    let foodData = FOOD_DATABASE[manualFoodName];
+    const finalCategory = manualFoodType.trim() || (foodData ? foodData.category : 'Custom');
+    
+    if (!foodData && manualFoodName.trim()) {
+      foodData = {
+        days: manualExpiryDays,
+        fridge: manualExpiryDays,
+        freezer: manualExpiryDays * 2,
+        category: finalCategory,
+        emoji: editingItem?.emoji || '🍽️'
+      };
+    }
+
+    const days = useCustomExpiry ? manualExpiryDays : (foodData[manualStorage.toLowerCase()] || foodData.days);
+
+    const updatedItem = {
+      ...editingItem,
+      name: manualFoodName,
+      category: finalCategory,
+      emoji: foodData.emoji,
+      expiryDate: new Date(Date.now() + days * 24 * 60 * 60 * 1000),
+      storage: manualStorage,
+      quantity: manualQuantity,
+      daysUntilExpiry: days
+    };
+
+    setFoodItems(foodItems.map(f => f.id === editingItem.id ? updatedItem : f));
+    showNotification(`✅ Updated ${manualFoodName}!`);
+    
+    // Reset form
+    setEditingItem(null);
+    setManualFoodName('');
+    setManualFoodType('');
+    setManualQuantity('1 unit');
+    setManualStorage('Fridge');
+    setManualExpiryDays(7);
+    setUseCustomExpiry(false);
+    setShowAddFood(false);
   };
 
   const updateCondition = (id, newCondition) => {
@@ -279,7 +1145,14 @@ const FreshKeepApp = () => {
   };
 
   const addManualFood = () => {
+    // If editing, use the save edited function instead
+    if (editingItem) {
+      saveEditedFood();
+      return;
+    }
+
     let foodData = FOOD_DATABASE[manualFoodName];
+    const finalCategory = manualFoodType.trim() || (foodData ? foodData.category : 'Custom');
     
     // If it's a custom food not in database
     if (!foodData && manualFoodName.trim()) {
@@ -287,7 +1160,7 @@ const FreshKeepApp = () => {
         days: manualExpiryDays,
         fridge: manualExpiryDays,
         freezer: manualExpiryDays * 2,
-        category: 'Custom',
+        category: finalCategory,
         emoji: '🍽️'
       };
     }
@@ -302,7 +1175,7 @@ const FreshKeepApp = () => {
     const newItem = {
       id: Date.now() + Math.random(),
       name: manualFoodName,
-      category: foodData.category,
+      category: finalCategory,
       emoji: foodData.emoji,
       purchaseDate: new Date(),
       expiryDate: new Date(Date.now() + days * 24 * 60 * 60 * 1000),
@@ -318,6 +1191,7 @@ const FreshKeepApp = () => {
     
     // Reset form
     setManualFoodName('');
+    setManualFoodType('');
     setManualQuantity('1 unit');
     setManualStorage('Fridge');
     setManualExpiryDays(7);
@@ -349,21 +1223,32 @@ const FreshKeepApp = () => {
 
   const expiringItems = foodItems.filter(f => f.daysUntilExpiry <= 2);
 
+  console.log('About to render, foodItems:', foodItems.length);
+  console.log('expiringItems:', expiringItems.length);
+
+  // Temporary test - remove this once working
+  // return (
+  //   <div style={{ padding: '50px', backgroundColor: 'lightblue', fontSize: '20px' }}>
+  //     <h1>FreshKeep App Loading...</h1>
+  //     <p>Food items: {foodItems.length}</p>
+  //   </div>
+  // );
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-green-50 to-emerald-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-teal-50">
       {/* Notification */}
       {notification && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-2xl shadow-2xl animate-bounce">
-          {notification}
+        <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-10 py-5 rounded-2xl shadow-2xl border-2 border-white/30">
+          <span className="text-lg font-semibold">{notification}</span>
         </div>
       )}
 
       {/* Header */}
-      <div className="bg-gradient-to-r from-green-700 to-emerald-600 shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 shadow-2xl">
+        <div className="max-w-7xl mx-auto px-6 py-10">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-5xl font-bold text-white mb-2" style={{ fontFamily: 'Georgia, serif' }}>
+              <h1 className="text-5xl font-bold text-white mb-2 drop-shadow-lg" style={{ fontFamily: 'Georgia, serif' }}>
                 🥗 FreshKeep
               </h1>
               <p className="text-green-50 text-lg">Your AI-Powered Food Waste Reducer</p>
@@ -371,55 +1256,55 @@ const FreshKeepApp = () => {
           </div>
 
           {/* Stats Bar */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-2xl p-4 text-center shadow-lg">
-              <div className="text-3xl font-bold bg-gradient-to-r from-green-700 to-emerald-600 bg-clip-text text-transparent">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+            <div className="bg-white/95 backdrop-blur rounded-2xl p-6 text-center shadow-xl hover:shadow-2xl transition-all hover:scale-105 border border-green-200">
+              <div className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                 ⭐ {userPoints}
               </div>
-              <div className="text-sm text-gray-600 mt-1">Rescue Points</div>
+              <div className="text-sm text-gray-600 mt-2 font-medium">Rescue Points</div>
             </div>
-            <div className="bg-white rounded-2xl p-4 text-center shadow-lg">
-              <div className="text-3xl font-bold bg-gradient-to-r from-green-700 to-emerald-600 bg-clip-text text-transparent">
+            <div className="bg-white/95 backdrop-blur rounded-2xl p-6 text-center shadow-xl hover:shadow-2xl transition-all hover:scale-105 border border-green-200">
+              <div className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                 🍽️ {recipesCookedCount}
               </div>
-              <div className="text-sm text-gray-600 mt-1">Meals Rescued</div>
+              <div className="text-sm text-gray-600 mt-2 font-medium">Meals Rescued</div>
             </div>
-            <div className="bg-white rounded-2xl p-4 text-center shadow-lg">
-              <div className="text-3xl font-bold bg-gradient-to-r from-green-700 to-emerald-600 bg-clip-text text-transparent">
+            <div className="bg-white/95 backdrop-blur rounded-2xl p-6 text-center shadow-xl hover:shadow-2xl transition-all hover:scale-105 border border-green-200">
+              <div className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                 ♻️ {wastePreventedKg.toFixed(1)}kg
               </div>
-              <div className="text-sm text-gray-600 mt-1">Waste Prevented</div>
+              <div className="text-sm text-gray-600 mt-2 font-medium">Waste Prevented</div>
             </div>
-            <div className="bg-white rounded-2xl p-4 text-center shadow-lg">
-              <div className="text-3xl font-bold bg-gradient-to-r from-green-700 to-emerald-600 bg-clip-text text-transparent">
+            <div className="bg-white/95 backdrop-blur rounded-2xl p-6 text-center shadow-xl hover:shadow-2xl transition-all hover:scale-105 border border-green-200">
+              <div className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                 🏆 {badges.length}
               </div>
-              <div className="text-sm text-gray-600 mt-1">Badges Earned</div>
+              <div className="text-sm text-gray-600 mt-2 font-medium">Badges Earned</div>
             </div>
           </div>
 
           {/* Alert for expiring foods */}
           {expiringItems.length > 0 && (
-            <div className="mt-6 bg-red-100 border-2 border-red-500 rounded-2xl p-4">
-              <h3 className="text-red-800 font-bold text-xl mb-2">
+            <div className="mt-8 bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-400 rounded-2xl p-6 shadow-lg">
+              <h3 className="text-red-800 font-bold text-2xl mb-3 flex items-center gap-2">
                 🚨 {expiringItems.length} item(s) expiring soon!
               </h3>
-              <p className="text-red-700">
+              <p className="text-red-700 text-lg">
                 Ready to rescue: {expiringItems.map(f => f.emoji + ' ' + f.name).join(', ')}
               </p>
             </div>
           )}
 
           {/* Tabs */}
-          <div className="flex gap-2 mt-6 overflow-x-auto">
+          <div className="flex gap-4 mt-8 overflow-x-auto pb-2">
             {['kitchen', 'recipes', 'leftovers', 'challenges'].map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-6 py-3 rounded-xl font-semibold capitalize whitespace-nowrap transition-all ${
+                className={`px-8 py-4 rounded-xl font-bold capitalize whitespace-nowrap transition-all transform ${
                   activeTab === tab
-                    ? 'bg-white text-green-700 shadow-lg'
-                    : 'bg-green-600 text-white hover:bg-green-500'
+                    ? 'bg-white text-green-700 shadow-2xl scale-105 border-2 border-green-300'
+                    : 'bg-white/30 text-white hover:bg-white/40 border-2 border-white/50 hover:scale-105'
                 }`}
               >
                 {tab === 'kitchen' && '📦'} {tab === 'recipes' && '🤖'} {tab === 'leftovers' && '🥡'} {tab === 'challenges' && '🎮'} {tab}
@@ -430,59 +1315,72 @@ const FreshKeepApp = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-10 mt-6">
         {activeTab === 'kitchen' && (
           <div>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold text-gray-800">🗄️ Food Inventory</h2>
+            <div className="flex justify-between items-center mb-10">
+              <h2 className="text-4xl font-bold text-gray-800">🗄️ Food Inventory</h2>
               <button
                 onClick={() => {
                   setShowAddFood(!showAddFood);
                   setAddMethod('scan');
                 }}
-                className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:shadow-lg transition-all"
+                className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-10 py-5 rounded-xl font-bold flex items-center gap-3 hover:shadow-2xl transition-all text-xl shadow-lg hover:scale-105"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-7 h-7" />
                 Add Food
               </button>
             </div>
 
             {showAddFood && (
-              <div className="bg-white rounded-2xl p-6 mb-6 shadow-xl border-2 border-green-200">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-2xl font-bold text-gray-800">➕ Add New Food</h3>
-                  <button onClick={() => setShowAddFood(false)} className="text-gray-500 hover:text-gray-700">
+              <div className="bg-gradient-to-br from-white to-green-50 rounded-2xl p-10 mb-10 shadow-2xl border-2 border-green-300">
+                <div className="flex justify-between items-center mb-8">
+                  <h3 className="text-3xl font-bold text-gray-800">
+                    {editingItem ? '✏️ Edit Food Item' : '➕ Add New Food'}
+                  </h3>
+                  <button onClick={() => {
+                    setShowAddFood(false);
+                    setEditingItem(null);
+                    setManualFoodName('');
+                    setManualFoodType('');
+                    setManualQuantity('1 unit');
+                    setManualStorage('Fridge');
+                    setManualExpiryDays(7);
+                    setUseCustomExpiry(false);
+                  }} className="text-gray-500 hover:text-gray-700">
                     <X className="w-6 h-6" />
                   </button>
                 </div>
 
-                {/* Method selection */}
-                <div className="flex gap-3 mb-6">
-                  <button
-                    onClick={() => setAddMethod('scan')}
-                    className={`flex-1 py-3 px-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all ${
-                      addMethod === 'scan'
-                        ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    <Camera className="w-5 h-5" />
-                    Scan Receipt
-                  </button>
-                  <button
-                    onClick={() => setAddMethod('manual')}
-                    className={`flex-1 py-3 px-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all ${
-                      addMethod === 'manual'
-                        ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    <Plus className="w-5 h-5" />
-                    Manual Entry
-                  </button>
-                </div>
+                {/* Method selection - hide when editing */}
+                {!editingItem && (
+                  <div className="flex gap-3 mb-6">
+                    <button
+                      onClick={() => setAddMethod('scan')}
+                      className={`flex-1 py-3 px-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all ${
+                        addMethod === 'scan'
+                          ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <Camera className="w-5 h-5" />
+                      Scan Receipt
+                    </button>
+                    <button
+                      onClick={() => setAddMethod('manual')}
+                      className={`flex-1 py-3 px-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all ${
+                        addMethod === 'manual'
+                          ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <Plus className="w-5 h-5" />
+                      Manual Entry
+                    </button>
+                  </div>
+                )}
 
-                {addMethod === 'scan' && (
+                {!editingItem && addMethod === 'scan' && (
                   <div>
                     {scannedItems.length === 0 ? (
                       <div className="border-2 border-dashed border-green-300 rounded-2xl p-8 text-center bg-green-50">
@@ -566,25 +1464,50 @@ const FreshKeepApp = () => {
                   </div>
                 )}
 
-                {addMethod === 'manual' && (
+                {(addMethod === 'manual' || editingItem) && (
                   <div>
-                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                    <div className="grid md:grid-cols-3 gap-4 mb-4">
                       <div>
                         <label className="block text-gray-700 font-semibold mb-2">Food Item</label>
                         <input
                           type="text"
-                          list="food-suggestions"
+                          list="food-name-suggestions"
                           value={manualFoodName}
                           onChange={(e) => setManualFoodName(e.target.value)}
-                          placeholder="Type food name or select from list..."
+                          placeholder="Type any food name..."
                           className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-green-600 focus:outline-none"
                         />
-                        <datalist id="food-suggestions">
+                        <datalist id="food-name-suggestions">
                           {Object.keys(FOOD_DATABASE).map(food => (
                             <option key={food} value={food} />
                           ))}
                         </datalist>
-                        <p className="text-xs text-gray-500 mt-1">💡 Type your own or select from suggestions</p>
+                        <p className="text-xs text-gray-500 mt-1">💡 Type your own or select from list</p>
+                      </div>
+                      <div>
+                        <label className="block text-gray-700 font-semibold mb-2">Food Type</label>
+                        <input
+                          type="text"
+                          list="food-type-suggestions"
+                          value={manualFoodType}
+                          onChange={(e) => setManualFoodType(e.target.value)}
+                          placeholder="e.g., Fruits, Vegetables..."
+                          className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-green-600 focus:outline-none"
+                        />
+                        <datalist id="food-type-suggestions">
+                          <option value="Fruits" />
+                          <option value="Vegetables" />
+                          <option value="Meat" />
+                          <option value="Dairy" />
+                          <option value="Grains" />
+                          <option value="Seafood" />
+                          <option value="Bakery" />
+                          <option value="Snacks" />
+                          <option value="Beverages" />
+                          <option value="Condiments" />
+                          <option value="Custom" />
+                        </datalist>
+                        <p className="text-xs text-gray-500 mt-1">💡 Type your own or select from list</p>
                       </div>
                       <div>
                         <label className="block text-gray-700 font-semibold mb-2">Quantity</label>
@@ -640,67 +1563,183 @@ const FreshKeepApp = () => {
                       onClick={addManualFood}
                       className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 rounded-xl font-bold hover:shadow-lg transition-all"
                     >
-                      Add to Inventory
+                      {editingItem ? 'Save Changes' : 'Add to Inventory'}
                     </button>
                   </div>
                 )}
               </div>
             )}
 
-            <div className="space-y-4">
+            <div className="space-y-6 mt-12">
               {foodItems.sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry).map(item => {
                 const status = getFreshnessStatus(item.daysUntilExpiry);
+                const isEditing = editingItem?.id === item.id;
+                
                 return (
                   <div
                     key={item.id}
-                    className={`bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all border-l-4 ${
+                    className={`bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all border-l-8 ${
                       status.status === 'soon' || status.status === 'today' ? 'border-red-500' :
                       status.status === 'moderate' ? 'border-yellow-500' : 'border-green-500'
-                    }`}
+                    } ${isEditing ? 'ring-4 ring-blue-400' : ''}`}
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-4 flex-1">
-                        <div className="text-6xl">{item.emoji}</div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="text-2xl font-bold text-gray-800">{item.name}</h3>
-                            <span className="text-2xl">{status.emoji}</span>
-                          </div>
-                          <p className="text-gray-600 mb-3">
-                            {item.category} • {item.quantity} • {item.storage}
-                          </p>
-                          <div className="flex flex-wrap gap-4 text-sm">
-                            <span className="text-gray-600">
-                              <strong>Purchased:</strong> {item.purchaseDate.toLocaleDateString()}
-                            </span>
-                            <span className={`font-bold ${item.daysUntilExpiry <= 2 ? 'text-red-600' : 'text-green-600'}`}>
-                              <strong>Expires:</strong> {item.expiryDate.toLocaleDateString()} ({item.daysUntilExpiry} days)
-                            </span>
-                            <span className="bg-gray-100 px-3 py-1 rounded-full text-gray-700">
-                              {item.condition}
-                            </span>
-                          </div>
-                        </div>
+                    <div className="flex items-start gap-6">
+                      {/* Emoji Section */}
+                      <div className="flex-shrink-0">
+                        <div className="text-7xl">{item.emoji}</div>
                       </div>
-                      <div className="flex flex-col gap-2">
-                        <select
-                          value={item.condition}
-                          onChange={(e) => updateCondition(item.id, e.target.value)}
-                          className="px-4 py-2 border-2 border-gray-300 rounded-lg text-sm focus:border-green-600 focus:outline-none"
-                        >
-                          <option>Fresh</option>
-                          <option>Opened</option>
-                          <option>Cooked</option>
-                          <option>Frozen</option>
-                          <option>Resealed</option>
-                        </select>
-                        <button
-                          onClick={() => deleteFood(item.id)}
-                          className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Remove
-                        </button>
+
+                      {/* Main Content */}
+                      <div className="flex-1">
+                        {isEditing ? (
+                          // Edit Mode
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-gray-700 font-semibold mb-2 text-sm">Food Name</label>
+                                <input
+                                  type="text"
+                                  value={manualFoodName}
+                                  onChange={(e) => setManualFoodName(e.target.value)}
+                                  className="w-full px-4 py-2 border-2 border-gray-300 rounded-xl focus:border-blue-600 focus:outline-none"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-gray-700 font-semibold mb-2 text-sm">Food Type</label>
+                                <input
+                                  type="text"
+                                  list="food-type-suggestions-inline"
+                                  value={manualFoodType}
+                                  onChange={(e) => setManualFoodType(e.target.value)}
+                                  className="w-full px-4 py-2 border-2 border-gray-300 rounded-xl focus:border-blue-600 focus:outline-none"
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-4">
+                              <div>
+                                <label className="block text-gray-700 font-semibold mb-2 text-sm">Quantity</label>
+                                <input
+                                  type="text"
+                                  value={manualQuantity}
+                                  onChange={(e) => setManualQuantity(e.target.value)}
+                                  className="w-full px-4 py-2 border-2 border-gray-300 rounded-xl focus:border-blue-600 focus:outline-none"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-gray-700 font-semibold mb-2 text-sm">Storage</label>
+                                <select
+                                  value={manualStorage}
+                                  onChange={(e) => setManualStorage(e.target.value)}
+                                  className="w-full px-4 py-2 border-2 border-gray-300 rounded-xl focus:border-blue-600 focus:outline-none"
+                                >
+                                  <option>Fridge</option>
+                                  <option>Freezer</option>
+                                  <option>Pantry</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-gray-700 font-semibold mb-2 text-sm">Days Until Expiry</label>
+                                <input
+                                  type="number"
+                                  value={manualExpiryDays}
+                                  onChange={(e) => setManualExpiryDays(parseInt(e.target.value) || 1)}
+                                  className="w-full px-4 py-2 border-2 border-gray-300 rounded-xl focus:border-blue-600 focus:outline-none"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          // View Mode
+                          <>
+                            <div className="flex items-center gap-3 mb-3">
+                              <h3 className="text-2xl font-bold text-gray-800">{item.name}</h3>
+                              <span className="text-3xl">{status.emoji}</span>
+                            </div>
+                            <p className="text-gray-600 mb-4 text-lg font-medium">
+                              {item.category} • {item.quantity} • {item.storage}
+                            </p>
+                            <div className="flex flex-wrap gap-3 mb-5">
+                              <span className="text-gray-700 bg-gray-100 px-4 py-2 rounded-xl font-semibold text-sm border border-gray-200">
+                                📅 Purchased: {item.purchaseDate.toLocaleDateString()}
+                              </span>
+                              <span className={`font-bold px-4 py-2 rounded-xl text-sm border-2 ${item.daysUntilExpiry <= 2 ? 'bg-red-50 text-red-700 border-red-300' : 'bg-green-50 text-green-700 border-green-300'}`}>
+                                ⏰ Expires: {item.expiryDate.toLocaleDateString()} ({item.daysUntilExpiry} days)
+                              </span>
+                              <span className="bg-gradient-to-r from-emerald-50 to-teal-50 px-4 py-2 rounded-xl text-gray-700 font-bold text-sm border-2 border-emerald-300">
+                                ✓ {item.condition}
+                              </span>
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Action Buttons Section */}
+                      <div className="flex flex-col gap-3 min-w-[240px]">
+                        {!isEditing && (
+                          <select
+                            value={item.condition}
+                            onChange={(e) => updateCondition(item.id, e.target.value)}
+                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl text-sm focus:border-green-600 focus:outline-none font-semibold hover:border-green-400 transition-colors bg-white"
+                          >
+                            <option>Fresh</option>
+                            <option>Opened</option>
+                            <option>Cooked</option>
+                            <option>Frozen</option>
+                            <option>Resealed</option>
+                          </select>
+                        )}
+                        <div className="grid grid-cols-2 gap-2">
+                          {isEditing ? (
+                            <>
+                              <button
+                                onClick={() => {
+                                  saveEditedFood();
+                                  setEditingItem(null);
+                                }}
+                                className="bg-gradient-to-br from-green-500 to-green-600 text-white px-3 py-2.5 rounded-xl hover:from-green-600 hover:to-green-700 transition-all flex items-center gap-1.5 justify-center font-bold shadow-md hover:shadow-lg hover:scale-105 text-sm"
+                              >
+                                <Check className="w-4 h-4" />
+                                Save
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setEditingItem(null);
+                                  setManualFoodName('');
+                                  setManualFoodType('');
+                                }}
+                                className="bg-gradient-to-br from-gray-500 to-gray-600 text-white px-3 py-2.5 rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all flex items-center gap-1.5 justify-center font-bold shadow-md hover:shadow-lg hover:scale-105 text-sm"
+                              >
+                                <X className="w-4 h-4" />
+                                Cancel
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => {
+                                  setEditingItem(item);
+                                  setManualFoodName(item.name);
+                                  setManualFoodType(item.category || '');
+                                  setManualQuantity(item.quantity);
+                                  setManualStorage(item.storage);
+                                  setManualExpiryDays(item.daysUntilExpiry);
+                                  setUseCustomExpiry(true);
+                                }}
+                                className="bg-gradient-to-br from-blue-500 to-blue-600 text-white px-3 py-2.5 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all flex items-center gap-1.5 justify-center font-bold shadow-md hover:shadow-lg hover:scale-105 text-sm"
+                              >
+                                <Edit className="w-4 h-4" />
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => deleteFood(item.id)}
+                                className="bg-gradient-to-br from-red-500 to-red-600 text-white px-3 py-2.5 rounded-xl hover:from-red-600 hover:to-red-700 transition-all flex items-center gap-1.5 justify-center font-bold shadow-md hover:shadow-lg hover:scale-105 text-sm"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                Delete
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -712,54 +1751,80 @@ const FreshKeepApp = () => {
 
         {activeTab === 'recipes' && (
           <div>
-            <h2 className="text-3xl font-bold text-gray-800 mb-6">🤖 AI Recipe Suggestions</h2>
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-4xl font-bold text-gray-800">🤖 AI Recipe Suggestions</h2>
+              <select 
+                value={cuisineFilter}
+                onChange={(e) => setCuisineFilter(e.target.value)}
+                className="px-7 py-4 rounded-xl border-2 border-green-400 focus:outline-none focus:border-green-600 font-bold text-gray-700 shadow-md hover:shadow-lg transition-all"
+              >
+                <option value="All">All Cuisines</option>
+                <option value="American">American</option>
+                <option value="Italian">Italian</option>
+                <option value="Mexican">Mexican</option>
+                <option value="Asian">Asian</option>
+                <option value="Mediterranean">Mediterranean</option>
+              </select>
+            </div>
             
             {expiringItems.length > 0 && (
-              <div className="bg-green-100 border-2 border-green-600 rounded-2xl p-6 mb-6">
-                <h3 className="text-green-800 font-bold text-xl mb-2">
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-500 rounded-2xl p-8 mb-10 shadow-lg">
+                <h3 className="text-green-800 font-bold text-2xl mb-3 flex items-center gap-2">
                   🎯 {expiringItems.length} ingredient(s) ready to be rescued!
                 </h3>
-                <p className="text-green-700 mb-4">
+                <p className="text-green-700 mb-6 text-lg">
                   Let's turn them into delicious meals before they expire.
                 </p>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <input
-                    type="number"
-                    placeholder="How many people eating?"
-                    min="1"
-                    max="10"
-                    defaultValue="2"
-                    className="px-4 py-3 rounded-xl border-2 border-green-300 focus:outline-none focus:border-green-600"
-                  />
-                  <select className="px-4 py-3 rounded-xl border-2 border-green-300 focus:outline-none focus:border-green-600">
-                    <option>Any Cuisine</option>
-                    <option>Italian</option>
-                    <option>Mexican</option>
-                    <option>Asian</option>
-                    <option>American</option>
-                  </select>
+                <div className="grid md:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-green-800 font-bold mb-2 text-sm">👥 Number of People</label>
+                    <select
+                      value={servings}
+                      onChange={(e) => setServings(parseInt(e.target.value))}
+                      className="w-full px-6 py-4 rounded-xl border-2 border-green-400 focus:outline-none focus:border-green-600 shadow-sm font-semibold bg-white"
+                    >
+                      <option value="1">1 person</option>
+                      <option value="2">2 people</option>
+                      <option value="3">3 people</option>
+                      <option value="4">4 people</option>
+                      <option value="5">5 people</option>
+                      <option value="6">6 people</option>
+                      <option value="7">7 people</option>
+                      <option value="8">8 people</option>
+                      <option value="9">9 people</option>
+                      <option value="10">10 people</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center">
+                    <p className="text-green-800 font-bold text-xl">
+                      {filteredRecipes.length} {cuisineFilter === 'All' ? '' : cuisineFilter} recipe{filteredRecipes.length !== 1 ? 's' : ''} available!
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
 
-            <div className="grid gap-6">
-              {recipes.map(recipe => (
-                <div key={recipe.id} className="bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all border-2 border-green-200">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-4">
-                      <div className="text-5xl">{recipe.emoji}</div>
+            <div className="grid gap-8">
+              {filteredRecipes.map(recipe => (
+                <div key={recipe.id} className="bg-white rounded-2xl p-10 shadow-xl hover:shadow-2xl transition-all border-2 border-green-300 hover:border-green-500">
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-center gap-5">
+                      <div className="text-6xl">{recipe.emoji}</div>
                       <div>
-                        <h3 className="text-2xl font-bold text-gray-800">{recipe.name}</h3>
-                        <div className="flex gap-4 mt-2 text-sm">
-                          <span className="text-green-600">⏱️ {recipe.time} min</span>
-                          <span className="text-blue-600">👨‍🍳 {recipe.difficulty}</span>
-                          <span className="text-amber-600">🌍 {recipe.cuisine}</span>
+                        <h3 className="text-3xl font-bold text-gray-800 mb-2">
+                          {recipe.name}
+                          {recipe.isAiGenerated && <span className="ml-3 text-sm bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 px-3 py-1.5 rounded-full font-semibold border border-purple-300">✨ AI Generated</span>}
+                        </h3>
+                        <div className="flex gap-5 mt-3 text-base">
+                          <span className="text-green-600 font-semibold bg-green-50 px-3 py-1 rounded-lg">⏱️ {recipe.time} min</span>
+                          <span className="text-blue-600 font-semibold bg-blue-50 px-3 py-1 rounded-lg">👨‍🍳 {recipe.difficulty}</span>
+                          <span className="text-amber-600 font-semibold bg-amber-50 px-3 py-1 rounded-lg">🌍 {recipe.cuisine}</span>
                         </div>
                       </div>
                     </div>
                     <button
                       onClick={() => setSelectedRecipe(recipe.id === selectedRecipe ? null : recipe.id)}
-                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                      className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all font-bold shadow-lg"
                     >
                       {selectedRecipe === recipe.id ? 'Hide' : 'View'}
                     </button>
@@ -767,39 +1832,33 @@ const FreshKeepApp = () => {
 
                   {selectedRecipe === recipe.id && (
                     <div className="border-t-2 border-gray-200 pt-4 mt-4">
-                      <div className="mb-4">
-                        <h4 className="font-bold text-gray-800 mb-2">Ingredients:</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {recipe.ingredients.map((ing, idx) => (
-                            <span key={idx} className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
-                              {ing}
-                            </span>
-                          ))}
-                        </div>
+                      <div className="mb-4 bg-blue-50 p-4 rounded-xl border border-blue-200">
+                        <p className="text-blue-800 font-semibold text-center">
+                          📊 Recipe scaled for {servings} {servings === 1 ? 'person' : 'people'}
+                        </p>
                       </div>
                       <div className="mb-4">
-                        <h4 className="font-bold text-gray-800 mb-2">Instructions:</h4>
-                        <ol className="list-decimal list-inside space-y-2 text-gray-700">
+                        <h4 className="font-bold text-gray-800 mb-2 text-lg">📋 Detailed Ingredients:</h4>
+                        <ul className="list-disc list-inside space-y-1 text-gray-700 ml-2">
+                          {scaleRecipeIngredients(recipe, servings).detailedIngredients.map((ing, idx) => (
+                            <li key={idx}>{ing}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div className="mb-4">
+                        <h4 className="font-bold text-gray-800 mb-2 text-lg">👨‍🍳 Instructions:</h4>
+                        <ol className="list-decimal list-inside space-y-2 text-gray-700 ml-2">
                           {recipe.steps.map((step, idx) => (
-                            <li key={idx}>{step}</li>
+                            <li key={idx} className="mb-2">{step}</li>
                           ))}
                         </ol>
                       </div>
                       <div className="flex gap-3">
                         <button
                           onClick={() => cookRecipe(recipe)}
-                          className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 rounded-xl font-bold hover:shadow-lg transition-all"
+                          className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 rounded-xl font-bold hover:shadow-lg transition-all"
                         >
                           👍 Cooked It! (+100 points)
-                        </button>
-                        <button 
-                          onClick={() => {
-                            setUserPoints(prev => prev + 50);
-                            showNotification('Recipe rated! +50 points');
-                          }}
-                          className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-3 rounded-xl font-bold hover:shadow-lg transition-all"
-                        >
-                          ⭐ Rate 5 Stars (+50 points)
                         </button>
                       </div>
                     </div>
@@ -812,66 +1871,67 @@ const FreshKeepApp = () => {
 
         {activeTab === 'leftovers' && (
           <div>
-            <h2 className="text-3xl font-bold text-gray-800 mb-6">🥡 Leftover Management</h2>
+            <h2 className="text-4xl font-bold text-gray-800 mb-10">🥡 Leftover Management</h2>
             
-            <div className="bg-white rounded-2xl p-6 mb-6 shadow-xl border-2 border-green-200">
-              <h3 className="text-2xl font-bold text-gray-800 mb-4">📸 Add New Leftover</h3>
-              <div className="grid md:grid-cols-2 gap-4 mb-4">
+            <div className="bg-gradient-to-br from-white to-green-50 rounded-2xl p-10 mb-10 shadow-xl border-2 border-green-300">
+              <h3 className="text-3xl font-bold text-gray-800 mb-8">➕ Add New Leftover</h3>
+              <div className="grid md:grid-cols-2 gap-6 mb-8">
                 <input
                   type="text"
                   placeholder="e.g., Pasta from Monday dinner"
-                  className="px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-green-600 focus:outline-none"
-                  id="leftover-name"
+                  value={leftoverName}
+                  onChange={(e) => setLeftoverName(e.target.value)}
+                  className="px-6 py-4 border-2 border-gray-300 rounded-xl focus:border-green-600 focus:outline-none font-semibold shadow-sm"
                 />
                 <input
                   type="number"
                   placeholder="Number of portions"
                   min="1"
-                  className="px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-green-600 focus:outline-none"
-                  id="leftover-portions"
+                  value={leftoverPortions}
+                  onChange={(e) => setLeftoverPortions(parseInt(e.target.value) || 1)}
+                  className="px-6 py-4 border-2 border-gray-300 rounded-xl focus:border-green-600 focus:outline-none font-semibold shadow-sm"
                 />
               </div>
               <button
                 onClick={() => {
-                  const name = document.getElementById('leftover-name').value;
-                  const portions = parseInt(document.getElementById('leftover-portions').value) || 1;
-                  
-                  if (name.trim()) {
+                  if (leftoverName.trim()) {
                     const newLeftover = {
                       id: Date.now(),
-                      name: name,
+                      name: leftoverName,
                       date: new Date(),
-                      portions: portions,
+                      portions: leftoverPortions,
                       expiryDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000),
                       daysLeft: 4
                     };
                     setLeftovers([...leftovers, newLeftover]);
-                    setUserPoints(prev => prev + 20);
-                    showNotification('Leftover added! +20 points');
-                    document.getElementById('leftover-name').value = '';
-                    document.getElementById('leftover-portions').value = '';
+                    showNotification('✅ Leftover added!');
+                    setLeftoverName('');
+                    setLeftoverPortions(1);
+                  } else {
+                    showNotification('⚠️ Please enter a leftover name');
                   }
                 }}
-                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 rounded-xl font-bold hover:shadow-lg transition-all"
+                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-5 rounded-xl font-bold hover:shadow-xl transition-all text-xl shadow-lg"
               >
-                📸 Add Leftover (+20 points)
+                ➕ Add Leftover
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-8">
               {leftovers.map(leftover => (
-                <div key={leftover.id} className="bg-white rounded-2xl p-6 shadow-lg border-l-4 border-yellow-500">
+                <div key={leftover.id} className="bg-gradient-to-r from-white to-yellow-50 rounded-2xl p-8 shadow-xl border-l-8 border-yellow-500 hover:shadow-2xl transition-all">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-xl font-bold text-gray-800 mb-2">🥡 {leftover.name}</h3>
-                      <p className="text-gray-600">
-                        Portions: {leftover.portions} | Cooked: {leftover.date.toLocaleDateString()} | 
-                        Use by: {leftover.expiryDate.toLocaleDateString()} ({leftover.daysLeft} days left)
+                      <h3 className="text-2xl font-bold text-gray-800 mb-3 flex items-center gap-2">🥡 {leftover.name}</h3>
+                      <p className="text-gray-600 text-lg flex flex-wrap gap-4">
+                        <span className="bg-gray-100 px-3 py-1 rounded-lg font-semibold">Portions: {leftover.portions}</span>
+                        <span className="bg-gray-100 px-3 py-1 rounded-lg font-semibold">Cooked: {leftover.date.toLocaleDateString()}</span>
+                        <span className="bg-yellow-100 px-3 py-1 rounded-lg font-semibold">Use by: {leftover.expiryDate.toLocaleDateString()} ({leftover.daysLeft} days left)</span>
                       </p>
                     </div>
                     <button
                       onClick={() => consumeLeftover(leftover.id)}
-                      className="bg-green-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-green-700 transition-colors"
+                      className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-8 py-4 rounded-xl font-bold hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl text-lg"
                     >
                       ✅ Eaten (+30 points)
                     </button>
@@ -884,13 +1944,13 @@ const FreshKeepApp = () => {
 
         {activeTab === 'challenges' && (
           <div>
-            <h2 className="text-3xl font-bold text-gray-800 mb-6">🎮 Challenges & Achievements</h2>
+            <h2 className="text-4xl font-bold text-gray-800 mb-8">🎮 Challenges & Achievements</h2>
             
             <div className="space-y-6 mb-8">
               {challenges.map(challenge => {
                 const progress = (challenge.progress / challenge.total) * 100;
                 return (
-                  <div key={challenge.id} className="bg-white rounded-2xl p-6 shadow-xl border-l-4 border-green-600">
+                  <div key={challenge.id} className="bg-white rounded-2xl p-8 shadow-xl border-l-4 border-green-600">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
                         <h3 className="text-2xl font-bold text-gray-800 mb-2">
