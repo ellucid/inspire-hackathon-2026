@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Camera, Plus, Trash2, ChevronRight, Star, Award, TrendingDown, Clock, AlertCircle, Check, Gift, Trophy, Target, Flame, Upload, X, Edit } from 'lucide-react';
+import { Camera, Plus, Trash2, ChevronRight, Star, Award, TrendingDown, Clock, AlertCircle, Check, Gift, Trophy, Target, Flame, Upload, X, Edit, Home, Book, Package, Zap } from 'lucide-react';
 import Tesseract from 'tesseract.js';
 import axios from 'axios';
 
@@ -1590,104 +1590,116 @@ const CopiaApp = () => {
   // );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-teal-50">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-green-50 to-emerald-100 flex">
       {/* Notification */}
       {notification && (
-        <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-10 py-5 rounded-2xl shadow-2xl border-2 border-white/30">
-          <span className="text-lg font-semibold">{notification}</span>
+        <div className="fixed top-6 right-6 z-50 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-2xl shadow-2xl animate-slideIn max-w-md">
+          {notification}
         </div>
       )}
 
-      {/* Header */}
-      <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 shadow-2xl" >
-        <div className="max-w-7xl mx-auto px-8 py-12">
-          <div className="flex items-center justify-between mb-10">
-            <div>
-              <h1 className="text-6xl font-bold text-white mb-3 drop-shadow-lg" style={{ fontFamily: 'Georgia, serif' }}>
-                🥗 COPIA
-              </h1>
-              <p className="text-green-50 text-xl">Your AI-Powered Food Waste Reducer</p>
-            </div>
-            <div className="text-right">
-              <p className="text-white font-semibold text-xl mb-3">👤 {userName}</p>
-              <button
-                onClick={() => setShowSignIn(true)}
-                className="bg-white/20 hover:bg-white/30 text-white px-8 py-3 rounded-xl font-semibold transition-all border-2 border-white/30 text-lg"
-              >
-                {userName === 'Guest' ? 'Sign In' : 'Account'}
-              </button>
-            </div>
-          </div>
+      {/* Sidebar */}
+      <div className="w-72 bg-gradient-to-b from-green-700 to-emerald-600 text-white p-6 shadow-2xl flex flex-col">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: 'Georgia, serif' }}>
+            🥗 COPIA
+          </h1>
+          <p className="text-green-100 text-sm">AI-Powered Food Waste Reducer</p>
+        </div>
 
-          {/* Stats Bar */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="bg-white/95 backdrop-blur rounded-2xl p-8 text-center shadow-xl hover:shadow-2xl transition-all hover:scale-105 border border-green-200">
-              <div className="text-5xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-3">
-                ⭐ {userPoints}
-              </div>
-              <div className="text-base text-gray-600 font-medium">Rescue Points</div>
-              <p className="text-xs text-gray-500 mt-2">Earn points by saving food!</p>
-            </div>
-            <div className="bg-white/95 backdrop-blur rounded-2xl p-8 text-center shadow-xl hover:shadow-2xl transition-all hover:scale-105 border border-green-200">
-              <div className="text-5xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-3">
-                🍽️ {recipesCookedCount}
-              </div>
-              <div className="text-base text-gray-600 font-medium">Meals Rescued</div>
-              <p className="text-xs text-gray-500 mt-2">Recipes cooked with expiring ingredients</p>
-            </div>
-            <div className="bg-white/95 backdrop-blur rounded-2xl p-8 text-center shadow-xl hover:shadow-2xl transition-all hover:scale-105 border border-green-200">
-              <div className="text-5xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-3">
-                ♻️ {wastePreventedKg.toFixed(1)}kg
-              </div>
-              <div className="text-base text-gray-600 font-medium">Waste Prevented</div>
-              <p className="text-xs text-gray-500 mt-2">Food saved from landfills</p>
-            </div>
-            <div 
-              onClick={() => setActiveTab('challenges')}
-              className="bg-white/95 backdrop-blur rounded-2xl p-8 text-center shadow-xl hover:shadow-2xl transition-all hover:scale-105 border border-green-200 cursor-pointer"
+        {/* Stats */}
+        <div className="mb-8 flex flex-col items-center">
+          <div className="w-60 h-20 bg-white/20 backdrop-blur-sm rounded-xl flex flex-col items-center justify-center">
+            <div className="text-2xl font-bold">⭐ {userPoints}</div>
+            <div className="text-green-100 text-xs">Rescue Points</div>
+          </div>
+          <div className="h-4"></div>
+          <div className="w-60 h-20 bg-white/20 backdrop-blur-sm rounded-xl flex flex-col items-center justify-center">
+            <div className="text-2xl font-bold">🍽️ {recipesCookedCount}</div>
+            <div className="text-green-100 text-xs">Meals Rescued</div>
+          </div>
+          <div className="h-4"></div>
+          <div className="w-60 h-20 bg-white/20 backdrop-blur-sm rounded-xl flex flex-col items-center justify-center">
+            <div className="text-2xl font-bold">♻️ {wastePreventedKg.toFixed(1)}kg</div>
+            <div className="text-green-100 text-xs">Waste Prevented</div>
+          </div>
+          <div className="h-4"></div>
+          <div 
+            onClick={() => setActiveTab('challenges')}
+            className="w-60 h-20 bg-white/20 backdrop-blur-sm rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/30 transition-all"
+          >
+            <div className="text-2xl font-bold">🏆 {badges.length}</div>
+            <div className="text-green-100 text-xs">Badges Earned</div>
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <nav className="space-y-4 flex-1 flex flex-col items-center">
+          {[
+            { id: 'kitchen', icon: Package, label: 'My Kitchen' },
+            { id: 'recipes', icon: Book, label: 'AI Recipes' },
+            { id: 'leftovers', icon: Home, label: 'Leftovers' },
+            { id: 'challenges', icon: Trophy, label: 'Challenges' },
+          ].map(({ id, icon: Icon, label }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={`w-56 h-14 flex items-center justify-center gap-3 rounded-xl font-semibold transition-all ${
+                activeTab === id
+                  ? 'bg-white text-green-700 shadow-lg'
+                  : 'text-white hover:bg-white/10'
+              }`}
             >
-              <div className="text-5xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-3">
-                🏆 {badges.length}
-              </div>
-              <div className="text-base text-gray-600 font-medium">Badges Earned</div>
-              <p className="text-xs text-blue-600 mt-2 font-semibold">Click to view badges →</p>
-            </div>
-          </div>
+              <Icon className="w-5 h-5" />
+              <span className="text-sm">{label}</span>
+            </button>
+          ))}
+        </nav>
 
-          {/* Alert for expiring foods */}
-          {expiringItems.length > 0 && (
-            <div className="mt-10 bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-400 rounded-2xl p-8 shadow-lg">
-              <h3 className="text-red-800 font-bold text-2xl mb-4 flex items-center gap-3">
-                🚨 {expiringItems.length} item(s) expiring soon!
-              </h3>
-              <p className="text-red-700 text-xl">
-                Ready to rescue: {expiringItems.map(f => f.emoji + ' ' + f.name).join(', ')}
-              </p>
-            </div>
-          )}
-
-          {/* Tabs */}
-          <div className="flex gap-5 mt-10 overflow-x-auto pb-2">
-            {['kitchen', 'recipes', 'leftovers', 'challenges'].map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-10 py-5 rounded-xl font-bold capitalize whitespace-nowrap transition-all transform text-lg ${
-                  activeTab === tab
-                    ? 'bg-white text-green-700 shadow-2xl scale-105 border-2 border-green-300'
-                    : 'bg-white/30 text-white hover:bg-white/40 border-2 border-white/50 hover:scale-105'
-                }`}
-              >
-                {tab === 'kitchen' && '📦'} {tab === 'recipes' && '🤖'} {tab === 'leftovers' && '🥡'} {tab === 'challenges' && '🎮'} {tab}
-              </button>
-            ))}
+        {/* User Account Section */}
+        <div className="flex flex-col items-center justify-center pt-6 border-t border-white/20 mb-4">
+          <div className="w-56 text-center mb-3">
+            <p className="text-white font-semibold text-sm mb-2">👤 {userName}</p>
+            <button
+              onClick={() => setShowSignIn(true)}
+              className="w-full bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl font-semibold transition-all border border-white/30 text-sm"
+            >
+              {userName === 'Guest' ? 'Sign In' : 'Account'}
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-10 mt-6">
-        {activeTab === 'kitchen' && (
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Header */}
+        <div className="bg-white shadow-sm border-b border-gray-200 p-6">
+          <div className="max-w-7xl mx-auto">
+            <h2 className="text-3xl font-bold text-gray-800 mb-6">
+              {activeTab === 'kitchen' && '📦 Food Inventory'}
+              {activeTab === 'recipes' && '🤖 AI Recipe Suggestions'}
+              {activeTab === 'leftovers' && '🥡 Leftover Management'}
+              {activeTab === 'challenges' && '🎮 Challenges & Achievements'}
+            </h2>
+            
+            {/* Alert for expiring foods */}
+            {expiringItems.length > 0 && (
+              <div className="bg-red-100 border-2 border-red-500 rounded-xl p-4">
+                <h3 className="text-red-800 font-bold text-lg mb-1">
+                  🚨 {expiringItems.length} item(s) expiring soon!
+                </h3>
+                <p className="text-red-700">
+                  Ready to rescue: {expiringItems.map(f => f.emoji + ' ' + f.name).join(', ')}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          <div className="max-w-7xl mx-auto">
+            {activeTab === 'kitchen' && (
           <div>
             <div className="flex justify-between items-center mb-10">
               <h2 className="text-4xl font-bold text-gray-800">🗄️ Food Inventory</h2>
@@ -2446,6 +2458,8 @@ const CopiaApp = () => {
             </div>
           </div>
         )}
+          </div>
+        </div>
       </div>
 
       {/* Badge Info Modal */}
@@ -2645,6 +2659,22 @@ const CopiaApp = () => {
           </div>
         </div>
       )}
+
+      <style jsx>{`
+        @keyframes slideIn {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        .animate-slideIn {
+          animation: slideIn 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 };
