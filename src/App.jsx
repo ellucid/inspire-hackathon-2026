@@ -25,6 +25,12 @@ const FreshKeepApp = () => {
   const [leftoverName, setLeftoverName] = useState('');
   const [leftoverPortions, setLeftoverPortions] = useState(1);
   const [servings, setServings] = useState(2);
+  const [showBadgeInfo, setShowBadgeInfo] = useState(null);
+  const [showStorageTips, setShowStorageTips] = useState(false);
+  const [currentStorageTip, setCurrentStorageTip] = useState('');
+  const [showSignIn, setShowSignIn] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
+  const [userName, setUserName] = useState('Guest');
 
   // Manual add food form state
   const [manualFoodName, setManualFoodName] = useState('');
@@ -94,6 +100,8 @@ const FreshKeepApp = () => {
       const savedBadges = localStorage.getItem('freshkeep_badges');
       const savedWastePreventedKg = localStorage.getItem('freshkeep_wastePreventedKg');
       const savedRecipesCookedCount = localStorage.getItem('freshkeep_recipesCookedCount');
+      const savedUserName = localStorage.getItem('freshkeep_userName');
+      const savedUserEmail = localStorage.getItem('freshkeep_userEmail');
       
       if (savedFoodItems) {
         const items = JSON.parse(savedFoodItems);
@@ -120,6 +128,8 @@ const FreshKeepApp = () => {
       if (savedBadges) setBadges(JSON.parse(savedBadges));
       if (savedWastePreventedKg) setWastePreventedKg(parseFloat(savedWastePreventedKg));
       if (savedRecipesCookedCount) setRecipesCookedCount(parseInt(savedRecipesCookedCount));
+      if (savedUserName) setUserName(savedUserName);
+      if (savedUserEmail) setUserEmail(savedUserEmail);
     } catch (error) {
       console.error('Error loading from localStorage:', error);
       // Clear corrupted data
@@ -173,8 +183,60 @@ const FreshKeepApp = () => {
     }
   }, [recipesCookedCount, hasLoadedFromStorage]);
 
+  useEffect(() => {
+    if (hasLoadedFromStorage) {
+      localStorage.setItem('freshkeep_userName', userName);
+    }
+  }, [userName, hasLoadedFromStorage]);
+
+  useEffect(() => {
+    if (hasLoadedFromStorage) {
+      localStorage.setItem('freshkeep_userEmail', userEmail);
+    }
+  }, [userEmail, hasLoadedFromStorage]);
+
   // Track recipe count and notify when new AI recipes become available
   const [previousRecipeCount, setPreviousRecipeCount] = useState(0);
+
+  // Badge information
+  const BADGE_INFO = {
+    'Waste Warrior': {
+      description: 'Awarded for preventing food waste by using items before they expire. Keep tracking your expiry dates and cooking with soon-to-expire items!',
+      icon: '🛡️'
+    },
+    'Recipe Rescuer': {
+      description: 'Earned by cooking AI-generated recipes that use your expiring ingredients. You\'re a master at turning leftovers into delicious meals!',
+      icon: '👨‍🍳'
+    },
+    'Eco Champion': {
+      description: 'Given for reaching milestones in reducing your environmental impact. Every kg of food saved makes a difference!',
+      icon: '🌱'
+    },
+    'Streak Master': {
+      description: 'Achieved by maintaining a consistent habit of checking your food inventory daily. Consistency is key to zero waste!',
+      icon: '🔥'
+    }
+  };
+
+  // Storage tips and food pairing advice
+  const STORAGE_TIPS = {
+    'Bananas': 'Store separately from other fruits - they release ethylene gas that speeds up ripening. Keep at room temperature until ripe, then refrigerate.',
+    'Apples': 'Keep away from bananas and other ethylene-sensitive produce. Store in the crisper drawer of your fridge for longer freshness.',
+    'Tomatoes': 'Never refrigerate! Store at room temperature away from direct sunlight. Keep away from bananas which will cause them to ripen too quickly.',
+    'Avocado': 'Store with bananas to ripen faster, or separately in the fridge once ripe to slow ripening. Never store cut avocado without lemon juice.',
+    'Strawberries': 'Don\'t wash until ready to eat. Store in a single layer in the fridge. Keep away from strong-smelling foods as they absorb odors easily.',
+    'Lettuce': 'Wrap in paper towels before storing in a plastic bag. Keep away from apples and pears. Change paper towels if they get damp.',
+    'Carrots': 'Remove green tops before storing. Keep in a sealed bag in the crisper drawer. They can last 3-4 weeks when stored properly.',
+    'Onions': 'Store in a cool, dry, well-ventilated area. Never store with potatoes - they release moisture and gases that spoil each other faster.',
+    'Potatoes': 'Keep in a dark, cool place (not the fridge!). Store away from onions. Light exposure causes them to turn green and produce toxins.',
+    'Milk': 'Store in the back of the fridge, not the door. Temperature fluctuations in the door can spoil it faster.',
+    'Cheese': 'Wrap in wax paper or parchment, not plastic wrap. Store in the warmest part of your fridge (usually the door or top shelf).',
+    'Bread': 'Keep at room temperature in a bread box. Refrigeration dries it out. Freeze for long-term storage.',
+    'Herbs': 'Treat like flowers - trim stems and place in water. Cover loosely with a plastic bag and refrigerate. Change water every 2 days.',
+    'Berries': 'Don\'t wash until eating. Store in the fridge in their original container lined with paper towels. Sort out any moldy ones immediately.',
+    'Garlic': 'Store in a cool, dark, dry place with good air circulation. Never refrigerate whole garlic - it will sprout and turn rubbery.',
+    'default': 'Store in appropriate temperature conditions. Keep ethylene-producing fruits (bananas, apples) separate from sensitive vegetables.'
+  };
 
   // Expanded food database
   const FOOD_DATABASE = {
@@ -1490,6 +1552,12 @@ const FreshKeepApp = () => {
     
     setFoodItems(prev => [...prev, newItem]);
     setUserPoints(prev => prev + 10);
+    
+    // Show storage tip for the food item
+    const storageTip = STORAGE_TIPS[manualFoodName] || STORAGE_TIPS['default'];
+    setCurrentStorageTip(`💡 Storage Tip for ${manualFoodName}: ${storageTip}`);
+    setShowStorageTips(true);
+    
     showNotification(`✅ Added ${manualFoodName}! +10 points`);
     
     // Reset form
@@ -1555,6 +1623,15 @@ const FreshKeepApp = () => {
                 🥗 FreshKeep
               </h1>
               <p className="text-green-50 text-lg">Your AI-Powered Food Waste Reducer</p>
+            </div>
+            <div className="text-right">
+              <p className="text-white font-semibold text-lg mb-2">👤 {userName}</p>
+              <button
+                onClick={() => setShowSignIn(true)}
+                className="bg-white/20 hover:bg-white/30 text-white px-6 py-2 rounded-xl font-semibold transition-all border-2 border-white/30"
+              >
+                {userName === 'Guest' ? 'Sign In' : 'Account'}
+              </button>
             </div>
           </div>
 
@@ -2216,8 +2293,33 @@ const FreshKeepApp = () => {
 
         {activeTab === 'leftovers' && (
           <div>
-            <h2 className="text-4xl font-bold text-gray-800 mb-10">🥡 Leftover Management</h2>
+            <h2 className="text-4xl font-bold text-gray-800 mb-10">🥡 Leftover Management & Recipe Ideas</h2>
             
+            {/* Storage Tips Section */}
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 mb-10 shadow-xl border-2 border-blue-300">
+              <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                💡 Smart Storage Tips
+              </h3>
+              <div className="space-y-3 text-gray-700">
+                <p className="flex items-start gap-2">
+                  <span className="text-xl">📦</span>
+                  <span><strong>Airtight containers:</strong> Store leftovers in sealed containers within 2 hours of cooking to prevent bacteria growth</span>
+                </p>
+                <p className="flex items-start gap-2">
+                  <span className="text-xl">❄️</span>
+                  <span><strong>Label & date:</strong> Always label with contents and date - most leftovers last 3-4 days in the fridge</span>
+                </p>
+                <p className="flex items-start gap-2">
+                  <span className="text-xl">🍲</span>
+                  <span><strong>Separate storage:</strong> Store sauces and solids separately to maintain texture and extend freshness</span>
+                </p>
+                <p className="flex items-start gap-2">
+                  <span className="text-xl">🔥</span>
+                  <span><strong>Reheat properly:</strong> Reheat to 165°F (74°C) to kill any bacteria - use oven for best texture</span>
+                </p>
+              </div>
+            </div>
+
             <div className="bg-gradient-to-br from-white to-green-50 rounded-2xl p-10 mb-10 shadow-xl border-2 border-green-300">
               <h3 className="text-3xl font-bold text-gray-800 mb-8">➕ Add New Leftover</h3>
               <div className="grid md:grid-cols-2 gap-6 mb-8">
@@ -2329,20 +2431,21 @@ const FreshKeepApp = () => {
               })}
             </div>
 
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">🏆 Your Badges</h3>
+            <h3 className="text-2xl font-bold text-gray-800 mb-4">🏆 Your Badges (Click to Learn More)</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { name: 'Waste Warrior', emoji: '♻️', earned: true },
                 { name: 'Recipe Rescuer', emoji: '👨‍🍳', earned: true },
-                { name: 'Zero Waste Champion', emoji: '🏆', earned: false },
-                { name: 'Chef Master', emoji: '⭐', earned: false },
+                { name: 'Eco Champion', emoji: '🏆', earned: false },
+                { name: 'Streak Master', emoji: '⭐', earned: false },
               ].map((badge, idx) => (
                 <div
                   key={idx}
-                  className={`rounded-2xl p-6 text-center ${
+                  onClick={() => setShowBadgeInfo(badge.name)}
+                  className={`rounded-2xl p-6 text-center transition-all cursor-pointer ${
                     badge.earned
-                      ? 'bg-gradient-to-br from-green-600 to-emerald-600 text-white shadow-lg'
-                      : 'bg-gray-200 text-gray-400'
+                      ? 'bg-gradient-to-br from-green-600 to-emerald-600 text-white shadow-lg hover:scale-105 hover:shadow-xl'
+                      : 'bg-gray-200 text-gray-400 hover:bg-gray-300 hover:scale-105'
                   }`}
                 >
                   <div className="text-5xl mb-3">{badge.earned ? badge.emoji : '🔒'}</div>
@@ -2353,6 +2456,145 @@ const FreshKeepApp = () => {
           </div>
         )}
       </div>
+
+      {/* Badge Info Modal */}
+      {showBadgeInfo && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowBadgeInfo(null)}>
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="text-center mb-6">
+              <div className="text-6xl mb-4">
+                {showBadgeInfo === 'Waste Warrior' && '♻️'}
+                {showBadgeInfo === 'Recipe Rescuer' && '👨‍🍳'}
+                {showBadgeInfo === 'Eco Champion' && '🏆'}
+                {showBadgeInfo === 'Streak Master' && '⭐'}
+              </div>
+              <h3 className="text-3xl font-bold text-gray-800 mb-2">{showBadgeInfo}</h3>
+            </div>
+            <div className="text-gray-700 text-lg mb-6 leading-relaxed">
+              {BADGE_INFO[showBadgeInfo]?.description}
+            </div>
+            <button
+              onClick={() => setShowBadgeInfo(null)}
+              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 px-6 rounded-xl font-bold text-lg hover:shadow-lg transition-all"
+            >
+              Got it!
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Storage Tips Modal */}
+      {showStorageTips && currentStorageTip && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowStorageTips(false)}>
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="text-center mb-6">
+              <div className="text-6xl mb-4">💡</div>
+              <h3 className="text-3xl font-bold text-gray-800 mb-2">Storage Tip</h3>
+            </div>
+            <div className="bg-blue-50 border-2 border-blue-300 rounded-xl p-4 mb-6">
+              <p className="text-gray-700 text-lg leading-relaxed">
+                {currentStorageTip}
+              </p>
+            </div>
+            <button
+              onClick={() => setShowStorageTips(false)}
+              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 px-6 rounded-xl font-bold text-lg hover:shadow-lg transition-all"
+            >
+              Thanks!
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Sign In Modal */}
+      {showSignIn && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowSignIn(false)}>
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="text-center mb-6">
+              <div className="text-6xl mb-4">👤</div>
+              <h3 className="text-3xl font-bold text-gray-800 mb-2">
+                {userName === 'Guest' ? 'Sign In' : 'Account Settings'}
+              </h3>
+            </div>
+            
+            {userName === 'Guest' ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-2">Name</label>
+                  <input
+                    type="text"
+                    placeholder="Enter your name"
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-green-600 focus:outline-none"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && e.target.value.trim()) {
+                        const name = e.target.value.trim();
+                        setUserName(name);
+                        setShowSignIn(false);
+                      }
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-2">Email (Optional)</label>
+                  <input
+                    type="email"
+                    placeholder="your@email.com"
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-green-600 focus:outline-none"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        setUserEmail(e.target.value.trim());
+                      }
+                    }}
+                  />
+                </div>
+                <button
+                  onClick={(e) => {
+                    const nameInput = e.target.parentElement.querySelector('input[type="text"]');
+                    const emailInput = e.target.parentElement.querySelector('input[type="email"]');
+                    if (nameInput.value.trim()) {
+                      setUserName(nameInput.value.trim());
+                      setUserEmail(emailInput.value.trim());
+                      setShowSignIn(false);
+                    }
+                  }}
+                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 px-6 rounded-xl font-bold text-lg hover:shadow-lg transition-all"
+                >
+                  Sign In
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="bg-green-50 border-2 border-green-300 rounded-xl p-4">
+                  <p className="text-gray-700 mb-2">
+                    <span className="font-semibold">Name:</span> {userName}
+                  </p>
+                  {userEmail && (
+                    <p className="text-gray-700">
+                      <span className="font-semibold">Email:</span> {userEmail}
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() => {
+                    setUserName('Guest');
+                    setUserEmail('');
+                    setShowSignIn(false);
+                  }}
+                  className="w-full bg-red-500 text-white py-3 px-6 rounded-xl font-bold text-lg hover:bg-red-600 transition-all"
+                >
+                  Sign Out
+                </button>
+                <button
+                  onClick={() => setShowSignIn(false)}
+                  className="w-full bg-gray-200 text-gray-700 py-3 px-6 rounded-xl font-bold text-lg hover:bg-gray-300 transition-all"
+                >
+                  Close
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
