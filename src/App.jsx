@@ -1701,16 +1701,15 @@ const CopiaApp = () => {
           <div className="max-w-7xl mx-auto">
             {activeTab === 'kitchen' && (
           <div>
-            <div className="flex justify-between items-center mb-10">
-              <h2 className="text-4xl font-bold text-gray-800">🗄️ Food Inventory</h2>
+            <div className="flex justify-start items-center mb-4">
               <button
                 onClick={() => {
                   setShowAddFood(!showAddFood);
                   setAddMethod('scan');
                 }}
-                className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-10 py-5 rounded-xl font-bold flex items-center gap-3 hover:shadow-2xl transition-all text-xl shadow-lg hover:scale-105"
+                className="h-10 w-33 bg-gradient-to-r from-green-600 to-emerald-600 text-white pl-6 pr-8 py-4 rounded-xl font-bold flex items-center gap-2 hover:shadow-2xl transition-all text-lg shadow-lg hover:scale-105"
               >
-                <Plus className="w-7 h-7" />
+                <Plus className="w-6 h-6" />
                 Add Food
               </button>
             </div>
@@ -2177,7 +2176,7 @@ const CopiaApp = () => {
         {activeTab === 'recipes' && (
           <div>
             <div className="flex justify-between items-center mb-8">
-              <h2 className="text-4xl font-bold text-gray-800">🤖 AI Recipe Suggestions</h2>
+              <h2 className="text-4xl font-bold text-gray-800"></h2>
               <select 
                 value={cuisineFilter}
                 onChange={(e) => setCuisineFilter(e.target.value)}
@@ -2296,7 +2295,7 @@ const CopiaApp = () => {
 
         {activeTab === 'leftovers' && (
           <div>
-            <h2 className="text-4xl font-bold text-gray-800 mb-10">🥡 Leftover Management & Recipe Ideas</h2>
+            <h2 className="text-4xl font-bold text-gray-800 mb-10"></h2>
             
             {/* Storage Tips Section */}
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 mb-10 shadow-xl border-2 border-blue-300">
@@ -2394,7 +2393,7 @@ const CopiaApp = () => {
 
         {activeTab === 'challenges' && (
           <div>
-            <h2 className="text-4xl font-bold text-gray-800 mb-8">🎮 Challenges & Achievements</h2>
+            <h2 className="text-4xl font-bold text-gray-800 mb-8"></h2>
             
             <div className="space-y-6 mb-8">
               {challenges.map(challenge => {
